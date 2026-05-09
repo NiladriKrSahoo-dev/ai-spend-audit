@@ -117,23 +117,34 @@ export default function Home() {
                 Save up to ${totals.annual.toLocaleString()}/yr
               </span>
             )}
-            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-[-0.04em] leading-[1.05] text-foreground mb-6">
-              Stop burning <br /> the budget.
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-[-0.04em] leading-[1.05] text-foreground mb-6">
+              POTENTIAL MONTHLY SAVINGS
             </h1>
             <p className="text-lg text-secondary font-medium tracking-tight">
-              Instantly audit your AI software stack. We detect ghost seats and monthly billing traps to optimize your actual spend.
+              We found opportunities to reduce your AI spend based on your current setup.
             </p>
           </motion.div>
 
-          <motion.div className="flex items-center justify-center gap-8 mt-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-            <div className="text-center">
+          <motion.div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-12 bg-card p-6 md:p-8 rounded-3xl border border-border shadow-sm max-w-2xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <div className="flex-1 w-full text-center sm:text-left">
               <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-1">Current Spend</p>
-              <p className="text-3xl font-bold tracking-tight">${totals.current.toLocaleString()}<span className="text-base text-tertiary">/mo</span></p>
+              <p className="text-3xl md:text-4xl font-bold tracking-tight">${totals.current.toLocaleString()}<span className="text-base text-tertiary font-medium">/mo</span></p>
             </div>
-            <div className="w-px h-12 bg-border"></div>
-            <div className="text-center">
+            
+            <div className="hidden sm:block w-px h-16 bg-border mx-2"></div>
+            <div className="sm:hidden w-full h-px bg-border my-2"></div>
+            
+            <div className="flex-1 w-full text-center sm:text-left">
               <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-1">Optimized</p>
-              <p className="text-3xl font-bold tracking-tight text-accent">${totals.optimised.toLocaleString()}<span className="text-base text-accent/60">/mo</span></p>
+              <p className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">${totals.optimised.toLocaleString()}<span className="text-base text-tertiary font-medium">/mo</span></p>
+            </div>
+
+            <div className="hidden sm:block w-px h-16 bg-border mx-2"></div>
+            <div className="sm:hidden w-full h-px bg-border my-2"></div>
+
+            <div className="flex-1 w-full text-center sm:text-right bg-accent/10 p-4 rounded-2xl">
+              <p className="text-xs font-bold uppercase tracking-widest text-accent mb-1">Savings</p>
+              <p className="text-3xl md:text-4xl font-bold tracking-tight text-accent">${totals.savings.toLocaleString()}<span className="text-base text-accent/70 font-medium">/mo</span></p>
             </div>
           </motion.div>
         </div>
@@ -156,7 +167,7 @@ export default function Home() {
         {/* ━━ Key Insights ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         {insights.length > 0 && (
           <div className="mt-20">
-            <h2 className="text-2xl font-bold tracking-tight uppercase mb-6">Optimization Insights</h2>
+            <h2 className="text-2xl font-bold tracking-tight mb-6">How to claim your savings</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {insights.map((ins, i) => (
                 <motion.div key={i} className="flat-card p-5 flex items-start gap-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_SOFT, delay: i * 0.05 }}>
