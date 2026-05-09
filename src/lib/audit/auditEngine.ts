@@ -117,7 +117,7 @@ export interface AuditResult {
 }
 
 export interface SavingOpportunity {
-  type: "annual_switch" | "ghost_seats" | "plan_downgrade";
+  type: "annual_switch" | "ghost_seats" | "plan_downgrade" | "incompatible_plan";
   description: string;
   monthlySavings: number;
 }
@@ -179,6 +179,28 @@ export function calculateSavings(
   }
 
   const breakdown: SavingOpportunity[] = [];
+
+  // -----------------------------------------------------------------------
+  // Check for Incompatible Plan (Individual plan with >1 seats)
+  // -----------------------------------------------------------------------
+  if (!plan.perUser && users > 1) {
+    const planNames = Object.keys(tool.plans);
+    const currentIdx = planNames.indexOf(currentPlan);
+    const nextPlan = currentIdx !== -1 && currentIdx < planNames.length - 1 ? planNames[currentIdx + 1] : "a Team plan";
+
+    return {
+      currentSpend: 0,
+      suggestedSpend: 0,
+      totalSavings: 0,
+      recommendation: `⚠️ Incompatible Plan: ${currentPlan} is for individuals. For ${users} users, please upgrade to ${nextPlan}.`,
+      currency: plan.currency,
+      breakdown: [{
+        type: "incompatible_plan",
+        description: `Seat count exceeds ${currentPlan} plan limit. Suggesting next tier up: ${nextPlan}.`,
+        monthlySavings: 0,
+      }],
+    };
+  }
 
   // -----------------------------------------------------------------------
   // 1. Calculate current monthly spend
