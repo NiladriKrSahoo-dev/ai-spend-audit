@@ -305,3 +305,26 @@ export function getPlansForTool(toolName: string): string[] {
   const tool = PRICING_DB[toolName];
   return tool ? Object.keys(tool.plans) : [];
 }
+// ---------------------------------------------------------------------------
+// Pricing Data Validator (Sanity Check)
+// ---------------------------------------------------------------------------
+
+export function validatePricingData(): string[] {
+  const warnings: string[] = [];
+
+  for (const [toolName, tool] of Object.entries(PRICING_DB)) {
+    for (const [planName, plan] of Object.entries(tool.plans)) {
+      if (plan.minSeats > 1 && !plan.perUser) {
+        warnings.push(`[${toolName} - ${planName}] Logic Error: minSeats > 1 but perUser is false.`);
+      }
+      if (plan.monthly !== null && plan.monthly < 0) {
+        warnings.push(`[${toolName} - ${planName}] Pricing Error: Negative monthly price.`);
+      }
+      if (!plan.currency) {
+        warnings.push(`[${toolName} - ${planName}] Data Error: Missing currency symbol.`);
+      }
+    }
+  }
+
+  return warnings;
+}
