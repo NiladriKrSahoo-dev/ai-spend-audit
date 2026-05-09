@@ -14,12 +14,12 @@ const SPRING_SOFT = { type: "spring" as const, stiffness: 300, damping: 24 };
 interface ToolMeta { name: string; defaultPlan: string; defaultSeats: number; }
 interface ToolConfig { plan: string; seats: number; }
 const TOOLS: ToolMeta[] = [
-  { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 10 },
-  { name: "ChatGPT",        defaultPlan: "Business", defaultSeats: 10 },
-  { name: "Claude",         defaultPlan: "Team",     defaultSeats: 8  },
-  { name: "GitHub Copilot", defaultPlan: "Business", defaultSeats: 10 },
-  { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 5  },
-  { name: "V0.dev",         defaultPlan: "Team",     defaultSeats: 5  },
+  { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 0 },
+  { name: "ChatGPT",        defaultPlan: "Business", defaultSeats: 0 },
+  { name: "Claude",         defaultPlan: "Team",     defaultSeats: 0  },
+  { name: "GitHub Copilot", defaultPlan: "Business", defaultSeats: 0 },
+  { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 0  },
+  { name: "V0.dev",         defaultPlan: "Team",     defaultSeats: 0  },
 ];
 
 export default function Home() {
@@ -30,7 +30,7 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem("auditConfigs");
+    const saved = localStorage.getItem("auditConfigs_v2");
     if (saved) {
       try { setConfigs(JSON.parse(saved)); } catch (e) {}
     }
@@ -54,7 +54,7 @@ export default function Home() {
   const update = useCallback((i: number, patch: Partial<ToolConfig>) => {
     setConfigs((prev) => {
       const next = prev.map((c, j) => (j === i ? { ...c, ...patch } : c));
-      localStorage.setItem("auditConfigs", JSON.stringify(next));
+      localStorage.setItem("auditConfigs_v2", JSON.stringify(next));
       return next;
     });
   }, []);
@@ -75,11 +75,11 @@ export default function Home() {
       {/* ── Background Elements ─────────────────────────────────────── */}
       <div className="hero-grid absolute inset-0 z-0 h-[80vh]" aria-hidden="true" />
 
-      {/* ── Nav ──────────────────────────────────────────────────────── */}
+      {/* ── Nav ───────────────────��──────────────────────────────────── */}
       <nav className="relative z-50 flex items-center justify-between px-6 lg:px-10 py-5">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded bg-foreground flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a 3.5 3.5 0 0 0 0 -7M7 12H4" /></svg>
           </div>
           <span className="text-lg font-bold tracking-tight text-foreground">Credex Audit</span>
         </div>
@@ -105,7 +105,7 @@ export default function Home() {
             </p>
           </motion.div>
 
-          <motion.div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-12 bg-card p-6 md:p-8 rounded-3xl border border-border shadow-sm max-w-2xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <motion.div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-12 bg-card p-6 md:p-8 rounded-3xl border border-border shadow-sm max-w-2xl mx-auto" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_SOFT, delay: 0.15 }}>
             <div className="flex-1 w-full text-center sm:text-left">
               <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-1">Current Spend</p>
               <p className="text-3xl md:text-4xl font-bold tracking-tight">${totals.current.toLocaleString()}<span className="text-base text-tertiary font-medium">/mo</span></p>
@@ -153,7 +153,7 @@ export default function Home() {
                 <motion.div key={i} className="flat-card p-5 flex items-start gap-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_SOFT, delay: i * 0.05 }}>
                   <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${ins.type === "ghost" ? "bg-black text-white" : "bg-accent text-white"}`}>
                     {ins.type === "ghost" ? (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 2.71 2.71l8.47-8.47a2 2 0 0 1 2.83 0l8.47 8.47a2 2 0 1 0 2.83 -2.83L13.12 6.05a2 2 0 0 0 -2.83 0z" /></svg>
                     ) : (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     )}
@@ -178,7 +178,7 @@ export default function Home() {
   );
 }
 
-// ── Subcomponents ────────────────────────────────────────────────────────────
+// ── Subcomponents ──────────────────────────────────────────────────────────
 
 function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; config: ToolConfig; result: ReturnType<typeof calculateSavings>; i: number; onUpdate: (i: number, p: Partial<ToolConfig>) => void }) {
   const plans = getPlansForTool(meta.name);
@@ -213,9 +213,9 @@ function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; confi
         <div>
           <label className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">Total Seats</label>
           <div className="flex items-center gap-2">
-            <button onClick={() => onUpdate(i, { seats: Math.max(1, config.seats - 1) })} className="control-btn w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg">−</button>
+            <button onClick={() => onUpdate(i, { seats: Math.max(0, config.seats - 1) })} className="control-btn w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg">−</button>
             <AnimatePresence mode="wait">
-              <motion.div key={config.seats} className="flex-1 h-12 flex items-center justify-center bg-white border border-border rounded-xl" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.1 }}>
+              <motion.div key={config.seats} className="flex-1 h-12 flex items-center justify-center bg-white border border-border rounded-xl" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={SPRING_SOFT}>
                 <span className="text-lg font-black">{config.seats}</span>
               </motion.div>
             </AnimatePresence>
