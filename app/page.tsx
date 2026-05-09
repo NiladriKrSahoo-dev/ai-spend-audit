@@ -98,7 +98,7 @@ export default function Home() {
               </span>
             )}
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-[-0.04em] leading-[1.05] text-foreground mb-6">
-              POTENTIAL MONTHLY SAVINGS
+              POTENTIAL SAVINGS
             </h1>
             <p className="text-lg text-secondary font-medium tracking-tight">
               We found opportunities to reduce your AI spend based on your current setup.
@@ -202,7 +202,7 @@ function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; confi
       <div className="space-y-5">
         <div>
           <label className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">Plan Tier</label>
-          <select value={config.plan} onChange={(e) => onUpdate(i, { plan: e.target.value })} className="select-input w-full h-12 text-sm font-medium mb-1 border-border rounded-lg px-3">
+          <select value={config.plan} onChange={(e) => onUpdate(i, { plan: e.target.value })} className="select-input w-full h-12 text-sm font-medium mb-1">
             {plans.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
           {planDetails && planDetails.minSeats > 1 && (
@@ -213,13 +213,13 @@ function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; confi
         <div>
           <label className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">Total Seats</label>
           <div className="flex items-center gap-2">
-            <button onClick={() => onUpdate(i, { seats: Math.max(1, config.seats - 1) })} className="control-btn w-12 h-12 rounded-xl border border-border flex items-center justify-center font-bold text-lg hover:bg-accent/10 transition-colors">−</button>
+            <button onClick={() => onUpdate(i, { seats: Math.max(1, config.seats - 1) })} className="control-btn w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg">−</button>
             <AnimatePresence mode="wait">
-              <motion.div key={config.seats} className="flex-1 h-12 flex items-center justify-center bg-card border border-border rounded-xl" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.1 }}>
+              <motion.div key={config.seats} className="flex-1 h-12 flex items-center justify-center bg-white border border-border rounded-xl" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.1 }}>
                 <span className="text-lg font-black">{config.seats}</span>
               </motion.div>
             </AnimatePresence>
-            <button onClick={() => onUpdate(i, { seats: Math.min(500, config.seats + 1) })} className="control-btn w-12 h-12 rounded-xl border border-border flex items-center justify-center font-bold text-lg hover:bg-accent/10 transition-colors">+</button>
+            <button onClick={() => onUpdate(i, { seats: Math.min(500, config.seats + 1) })} className="control-btn w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg">+</button>
           </div>
           {planDetails && planDetails.minSeats > 1 && config.seats < planDetails.minSeats && (
             <p className="text-[10px] uppercase font-bold tracking-wider text-orange-500 mt-2">Note: You will be billed for the minimum {planDetails.minSeats} seats.</p>
@@ -232,7 +232,7 @@ function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; confi
           {result.totalSavings > 0 && (
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-widest text-secondary">Optimized</span>
-              <span className="text-sm font-bold text-green-500">Save {cur}{result.totalSavings}/mo</span>
+              <span className="text-sm font-bold text-accent">Save {cur}{result.totalSavings}/mo</span>
             </div>
           )}
           {result.breakdown.map((b, idx) => (
