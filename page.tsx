@@ -13,8 +13,6 @@ const SPRING_SOFT = { type: "spring" as const, stiffness: 300, damping: 24 };
 
 interface ToolMeta { name: string; defaultPlan: string; defaultSeats: number; }
 interface ToolConfig { plan: string; seats: number; }
-interface CompRow { tool: string; plan: string; monthly: number | null; annual: number | null; currency: string; savings: number; minSeats: number; perUser: boolean; }
-
 const TOOLS: ToolMeta[] = [
   { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 10 },
   { name: "ChatGPT",        defaultPlan: "Business", defaultSeats: 10 },
@@ -23,17 +21,6 @@ const TOOLS: ToolMeta[] = [
   { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 5  },
   { name: "V0.dev",         defaultPlan: "Team",     defaultSeats: 5  },
 ];
-
-function buildComparison(): CompRow[] {
-  const rows: CompRow[] = [];
-  for (const [toolName, td] of Object.entries(PRICING_DB)) {
-    for (const [planName, p] of Object.entries(td.plans)) {
-      const sav = p.monthly !== null && p.annual !== null ? (p.monthly - p.annual) * 12 : 0;
-      rows.push({ tool: toolName, plan: planName, monthly: p.monthly, annual: p.annual, currency: p.currency, savings: sav, minSeats: p.minSeats, perUser: p.perUser });
-    }
-  }
-  return rows;
-}
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -83,12 +70,7 @@ export default function Home() {
     return arr;
   }, [results]);
 
-  const comparison = useMemo(() => buildComparison(), []);
-  const grouped = useMemo(() => {
-    const map = new Map<string, CompRow[]>();
-    comparison.forEach((r) => { const arr = map.get(r.tool) || []; arr.push(r); map.set(r.tool, arr); });
-    return map;
-  }, [comparison]);
+
 
   return (
     <div className="min-h-screen relative bg-background">
@@ -188,46 +170,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* ━━ Pricing Reference ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className="mt-24">
-          <h2 className="text-2xl font-bold tracking-tight uppercase mb-8">Pricing Directory</h2>
-          
-          <div className="space-y-6">
-            {Array.from(grouped.entries()).map(([toolName, rows]) => (
-              <div key={toolName} className="flat-card p-6 md:p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold tracking-tight text-foreground">{toolName}</h3>
-                  <a href={PRICING_DB[toolName]?.source} target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-wider text-blue hover:underline">
-                    View Source
-                  </a>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b-2 border-foreground">
-                        {["Plan", "Type", "Monthly", "Annual", "Save/Yr", "Min Seats"].map((h) => (
-                          <th key={h} className={`py-3 text-xs font-bold uppercase tracking-widest text-foreground ${h === "Plan" || h === "Type" ? "text-left" : "text-right"}`}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((r) => (
-                        <tr key={r.plan} className="comparison-row border-b border-border">
-                          <td className="py-4 font-bold text-foreground">{r.plan}</td>
-                          <td className="py-4 font-medium text-secondary text-xs uppercase tracking-wider">{r.perUser ? "Per User" : "Flat Fee"}</td>
-                          <td className="py-4 text-right font-medium text-foreground">{r.monthly !== null ? `${r.currency}${r.monthly.toLocaleString()}` : "Custom Pricing"}</td>
-                          <td className="py-4 text-right font-medium text-foreground">{r.annual !== null ? `${r.currency}${r.annual}` : <span className="text-tertiary">{r.monthly === null ? "Custom Pricing" : "—"}</span>}</td>
-                          <td className="py-4 text-right font-bold">{r.savings > 0 ? <span className="text-accent">{r.currency}{r.savings}</span> : <span className="text-tertiary">—</span>}</td>
-                          <td className="py-4 text-right font-bold">{r.minSeats > 1 ? <span className="text-foreground">{r.minSeats} min</span> : <span className="text-tertiary">1</span>}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+
       </main>
 
       <footer className="border-t border-border py-12 px-6 text-center bg-card">
@@ -243,7 +186,8 @@ export default function Home() {
 function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; config: ToolConfig; result: ReturnType<typeof calculateSavings>; i: number; onUpdate: (i: number, p: Partial<ToolConfig>) => void }) {
   const plans = getPlansForTool(meta.name);
   const cur = result.currency;
-  const isCustom = PRICING_DB[meta.name]?.plans[config.plan]?.monthly === null;
+  const planDetails = PRICING_DB[meta.name]?.plans[config.plan];
+  const isCustom = planDetails?.monthly === null;
 
   return (
     <motion.div className="flat-card p-6 flex flex-col" whileHover={{ y: -4 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_SOFT, delay: 0.1 + i * 0.05 }}>
@@ -261,9 +205,12 @@ function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; confi
       <div className="space-y-5">
         <div>
           <label className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">Plan Tier</label>
-          <select value={config.plan} onChange={(e) => onUpdate(i, { plan: e.target.value })} className="select-input w-full h-12 text-sm font-medium">
+          <select value={config.plan} onChange={(e) => onUpdate(i, { plan: e.target.value })} className="select-input w-full h-12 text-sm font-medium mb-1">
             {plans.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
+          {planDetails && planDetails.minSeats > 1 && (
+            <p className="text-[10px] uppercase font-bold tracking-wider text-secondary mt-1">Requires a minimum of {planDetails.minSeats} seats</p>
+          )}
         </div>
 
         <div>
@@ -277,6 +224,9 @@ function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; confi
             </AnimatePresence>
             <button onClick={() => onUpdate(i, { seats: Math.min(500, config.seats + 1) })} className="control-btn w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg">+</button>
           </div>
+          {planDetails && planDetails.minSeats > 1 && config.seats < planDetails.minSeats && (
+            <p className="text-[10px] uppercase font-bold tracking-wider text-orange-500 mt-2">Note: You will be billed for the minimum {planDetails.minSeats} seats.</p>
+          )}
         </div>
       </div>
 
