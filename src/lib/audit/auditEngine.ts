@@ -59,7 +59,7 @@ export const PRICING_DB: Record<string, ToolPricing> = {
       Free:       { monthly: 0,    annual: null, annualTotal: null,  minSeats: 1, perUser: false, currency: "$" },
       Pro:        { monthly: 20,   annual: 17,   annualTotal: 204,   minSeats: 1, perUser: false, currency: "$" },
       Team:       { monthly: 30,   annual: 25,   annualTotal: 300,   minSeats: 5, perUser: true,  currency: "$" },
-      Max:        { monthly: 100,  annual: null, annualTotal: null,  minSeats: 1, perUser: false, currency: "$" },
+      Max: { monthly: 100, annual: null, annualTotal: null, minSeats: 1, perUser: true, currency: "$" },
       Enterprise: { monthly: null, annual: null, annualTotal: null,  minSeats: 1, perUser: true,  currency: "$" },
     },
   },
