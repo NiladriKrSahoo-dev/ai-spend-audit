@@ -75,7 +75,7 @@ export default function Home() {
       {/* ── Background Elements ─────────────────────────────────────── */}
       <div className="hero-grid absolute inset-0 z-0 h-[80vh]" aria-hidden="true" />
 
-      {/* ── Nav ───────────────────��──────────────────────────────────── */}
+      {/* ── Nav ──────────────────────────────────────────────────────── */}
       <nav className="relative z-50 flex items-center justify-between px-6 lg:px-10 py-5">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded bg-foreground flex items-center justify-center">
