@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   calculateSavings,
@@ -11,35 +11,30 @@ import {
 const SPRING = { type: "spring" as const, stiffness: 400, damping: 28 };
 const SPRING_SOFT = { type: "spring" as const, stiffness: 300, damping: 24 };
 
-interface ToolMeta { name: string; accent: string; defaultPlan: string; defaultSeats: number; }
+interface ToolMeta { name: string; defaultPlan: string; defaultSeats: number; }
 interface ToolConfig { plan: string; seats: number; }
-interface CompRow { tool: string; plan: string; monthly: number | null; annual: number | null; currency: string; savings: number; minSeats: number; perUser: boolean; }
-
 const TOOLS: ToolMeta[] = [
-  { name: "Cursor",         accent: "#007AFF", defaultPlan: "Teams",    defaultSeats: 10 },
-  { name: "ChatGPT",        accent: "#34C759", defaultPlan: "Business", defaultSeats: 10 },
-  { name: "Claude",         accent: "#FF9500", defaultPlan: "Team",     defaultSeats: 8  },
-  { name: "GitHub Copilot", accent: "#AF52DE", defaultPlan: "Business", defaultSeats: 10 },
-  { name: "Gemini",         accent: "#5AC8FA", defaultPlan: "Pro",      defaultSeats: 5  },
-  { name: "V0.dev",         accent: "#5856D6", defaultPlan: "Team",     defaultSeats: 5  },
+  { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 10 },
+  { name: "ChatGPT",        defaultPlan: "Business", defaultSeats: 10 },
+  { name: "Claude",         defaultPlan: "Team",     defaultSeats: 8  },
+  { name: "GitHub Copilot", defaultPlan: "Business", defaultSeats: 10 },
+  { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 5  },
+  { name: "V0.dev",         defaultPlan: "Team",     defaultSeats: 5  },
 ];
 
-function buildComparison(): CompRow[] {
-  const rows: CompRow[] = [];
-  for (const [toolName, td] of Object.entries(PRICING_DB)) {
-    for (const [planName, p] of Object.entries(td.plans)) {
-      if (p.monthly === null && p.annual === null) continue;
-      const sav = p.monthly !== null && p.annual !== null ? (p.monthly - p.annual) * 12 : 0;
-      rows.push({ tool: toolName, plan: planName, monthly: p.monthly, annual: p.annual, currency: p.currency, savings: sav, minSeats: p.minSeats, perUser: p.perUser });
-    }
-  }
-  return rows;
-}
-
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const [configs, setConfigs] = useState<ToolConfig[]>(
     TOOLS.map((t) => ({ plan: t.defaultPlan, seats: t.defaultSeats })),
   );
+
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem("auditConfigs");
+    if (saved) {
+      try { setConfigs(JSON.parse(saved)); } catch (e) {}
+    }
+  }, []);
 
   const results = useMemo(
     () => TOOLS.map((t, i) => calculateSavings(t.name, configs[i].seats, configs[i].plan, "monthly")),
@@ -57,7 +52,11 @@ export default function Home() {
   }, [results, configs]);
 
   const update = useCallback((i: number, patch: Partial<ToolConfig>) => {
-    setConfigs((prev) => prev.map((c, j) => (j === i ? { ...c, ...patch } : c)));
+    setConfigs((prev) => {
+      const next = prev.map((c, j) => (j === i ? { ...c, ...patch } : c));
+      localStorage.setItem("auditConfigs", JSON.stringify(next));
+      return next;
+    });
   }, []);
 
   const insights = useMemo(() => {
@@ -71,235 +70,178 @@ export default function Home() {
     return arr;
   }, [results]);
 
-  const comparison = useMemo(() => buildComparison(), []);
-  const grouped = useMemo(() => {
-    const map = new Map<string, CompRow[]>();
-    comparison.forEach((r) => { const arr = map.get(r.tool) || []; arr.push(r); map.set(r.tool, arr); });
-    return map;
-  }, [comparison]);
-
   return (
-    <div className="min-h-screen relative">
-      {/* ── Liquid color blobs ──────────────────────────────────────── */}
-      <div className="ambient-layer" aria-hidden="true">
-        <div className="blob blob-animate w-[500px] h-[500px] bg-blue/30 top-[-10%] left-[5%]" />
-        <div className="blob blob-animate w-[400px] h-[400px] bg-purple/20 top-[15%] right-[0%]" style={{ animationDelay: "4s" }} />
-        <div className="blob blob-animate w-[450px] h-[450px] bg-teal/20 top-[40%] left-[50%]" style={{ animationDelay: "8s" }} />
-        <div className="blob blob-animate w-[350px] h-[350px] bg-orange/15 bottom-[10%] left-[10%]" style={{ animationDelay: "12s" }} />
-        <div className="blob blob-animate w-[500px] h-[500px] bg-green/15 bottom-[-5%] right-[15%]" style={{ animationDelay: "6s" }} />
-      </div>
+    <div className="min-h-screen relative bg-background">
+      {/* ── Background Elements ─────────────────────────────────────── */}
+      <div className="hero-grid absolute inset-0 z-0 h-[80vh]" aria-hidden="true" />
 
       {/* ── Nav ──────────────────────────────────────────────────────── */}
-      <nav className="liquid-glass-nav sticky top-0 z-50 flex items-center justify-between px-6 lg:px-10 py-3.5">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-[8px] bg-indigo flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M2 12h4M18 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" /></svg>
+      <nav className="relative z-50 flex items-center justify-between px-6 lg:px-10 py-5">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded bg-foreground flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
           </div>
-          <span className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">AI Spend Audit</span>
+          <span className="text-lg font-bold tracking-tight text-foreground">Credex Audit</span>
         </div>
-        <span className="text-[11px] text-secondary font-mono tracking-wide">Verified May 2026</span>
+        <span className="text-xs font-semibold tracking-wider uppercase text-secondary">Est. 2026</span>
       </nav>
 
-      <main className="relative z-10 max-w-6xl mx-auto px-5 lg:px-8 py-10 lg:py-14">
-
+      <main className="relative z-10 max-w-6xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
+        
         {/* ━━ Hero ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <motion.div className="liquid-glass p-8 sm:p-10 lg:p-12" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_SOFT, delay: 0.1 }}>
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
-            <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-secondary">Total Projected Savings</p>
-              <AnimatePresence mode="wait">
-                <motion.h1 key={totals.savings} className={`text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-[-0.04em] tabular-nums ${totals.savings > 0 ? "text-green" : "text-tertiary"}`} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}>
-                  ${totals.savings.toLocaleString()}<span className="text-2xl text-secondary font-normal">/mo</span>
-                </motion.h1>
-              </AnimatePresence>
-              {totals.savings > 0 ? (
-                <p className="text-sm text-secondary">That&apos;s <span className="text-green font-semibold">${totals.annual.toLocaleString()}/yr</span> back in your budget</p>
-              ) : (
-                <p className="text-sm text-tertiary">Adjust tools below to find savings</p>
-              )}
-            </div>
-            <div className="flex gap-10">
-              <StatBox label="Current" value={`$${totals.current.toLocaleString()}`} sub="/month" />
-              <StatBox label="Optimised" value={`$${totals.optimised.toLocaleString()}`} sub="/month" highlight={totals.savings > 0} />
-            </div>
-          </div>
-        </motion.div>
+        <div className="text-center max-w-3xl mx-auto mb-20">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={SPRING_SOFT}>
+            {totals.savings > 0 && (
+              <span className="pill-badge mb-6">
+                <svg className="w-3 h-3 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Save up to ${totals.annual.toLocaleString()}/yr
+              </span>
+            )}
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-[-0.04em] leading-[1.05] text-foreground mb-6">
+              POTENTIAL MONTHLY SAVINGS
+            </h1>
+            <p className="text-lg text-secondary font-medium tracking-tight">
+              We found opportunities to reduce your AI spend based on your current setup.
+            </p>
+          </motion.div>
 
-        {/* ━━ Quick Stats ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
-          {[
-            { l: "Tools Tracked", v: String(TOOLS.length) },
-            { l: "Total Seats", v: String(totals.totalSeats) },
-            { l: "Optimisable", v: `${totals.withSavings} tool${totals.withSavings !== 1 ? "s" : ""}` },
-            { l: "Avg Cost/Seat", v: totals.totalSeats > 0 ? `$${Math.round(totals.current / totals.totalSeats)}` : "—" },
-          ].map((s) => (
-            <div key={s.l} className="liquid-glass-sm px-5 py-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-secondary">{s.l}</p>
-              <p className="text-xl font-semibold tabular-nums mt-1 text-foreground">{s.v}</p>
+          <motion.div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-12 bg-card p-6 md:p-8 rounded-3xl border border-border shadow-sm max-w-2xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <div className="flex-1 w-full text-center sm:text-left">
+              <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-1">Current Spend</p>
+              <p className="text-3xl md:text-4xl font-bold tracking-tight">${totals.current.toLocaleString()}<span className="text-base text-tertiary font-medium">/mo</span></p>
             </div>
-          ))}
+            
+            <div className="hidden sm:block w-px h-16 bg-border mx-2"></div>
+            <div className="sm:hidden w-full h-px bg-border my-2"></div>
+            
+            <div className="flex-1 w-full text-center sm:text-left">
+              <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-1">Optimized</p>
+              <p className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">${totals.optimised.toLocaleString()}<span className="text-base text-tertiary font-medium">/mo</span></p>
+            </div>
+
+            <div className="hidden sm:block w-px h-16 bg-border mx-2"></div>
+            <div className="sm:hidden w-full h-px bg-border my-2"></div>
+
+            <div className="flex-1 w-full text-center sm:text-right bg-accent/10 p-4 rounded-2xl">
+              <p className="text-xs font-bold uppercase tracking-widest text-accent mb-1">Savings</p>
+              <p className="text-3xl md:text-4xl font-bold tracking-tight text-accent">${totals.savings.toLocaleString()}<span className="text-base text-accent/70 font-medium">/mo</span></p>
+            </div>
+          </motion.div>
         </div>
 
         {/* ━━ Configure Your Stack ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <Section title="Configure Your Stack" sub="Set each tool's plan and seat count to see real-time savings" className="mt-14" />
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold tracking-tight uppercase">Audit Marketplace</h2>
+          <p className="text-sm font-medium text-secondary mt-1">Adjust your seat counts and plans below.</p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
-          {TOOLS.slice(0, 3).map((t, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {mounted && TOOLS.map((t, i) => (
             <ToolCard key={t.name} meta={t} config={configs[i]} result={results[i]} i={i} onUpdate={update} />
           ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
-          {TOOLS.slice(3).map((t, i) => (
-            <ToolCard key={t.name} meta={t} config={configs[i + 3]} result={results[i + 3]} i={i + 3} onUpdate={update} />
+          {!mounted && TOOLS.map((t, i) => (
+            <ToolCard key={t.name} meta={t} config={{ plan: t.defaultPlan, seats: t.defaultSeats }} result={calculateSavings(t.name, t.defaultSeats, t.defaultPlan, "monthly")} i={i} onUpdate={update} />
           ))}
         </div>
 
         {/* ━━ Key Insights ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         {insights.length > 0 && (
-          <>
-            <Section title="Key Insights" sub={`${insights.length} optimisation${insights.length > 1 ? "s" : ""} found`} className="mt-14" />
-            <div className="space-y-3 mt-6">
+          <div className="mt-20">
+            <h2 className="text-2xl font-bold tracking-tight mb-6">How to claim your savings</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {insights.map((ins, i) => (
-                <motion.div key={i} className="liquid-glass-sm px-6 py-5 flex items-start gap-4" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ ...SPRING_SOFT, delay: 0.05 * i }}>
-                  <div className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${ins.type === "ghost" ? "bg-orange/10" : "bg-blue/10"}`}>
+                <motion.div key={i} className="flat-card p-5 flex items-start gap-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_SOFT, delay: i * 0.05 }}>
+                  <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${ins.type === "ghost" ? "bg-black text-white" : "bg-accent text-white"}`}>
                     {ins.type === "ghost" ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" /></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 9h6M9 15h6" /></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     )}
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-secondary font-mono mb-1">{ins.tool}</p>
-                    <p className={`text-[13px] leading-relaxed font-medium tracking-[-0.01em] ${ins.type === "ghost" ? "text-orange" : "text-blue"}`}>{ins.text}</p>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-1">{ins.tool}</p>
+                    <p className="text-sm font-medium text-secondary">{ins.text}</p>
                   </div>
                 </motion.div>
               ))}
             </div>
-          </>
+          </div>
         )}
 
-        {/* ━━ Pricing Reference (grouped) ━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <Section title="Monthly vs. Annual Pricing" sub="Complete per-seat reference across all tools" className="mt-14" />
-
-        <div className="space-y-5 mt-6">
-          {Array.from(grouped.entries()).map(([toolName, rows]) => (
-            <motion.div key={toolName} className="liquid-glass p-6 sm:p-7" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={SPRING_SOFT}>
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: TOOLS.find((t) => t.name === toolName)?.accent ?? "#888" }} />
-                <h3 className="text-[15px] font-semibold text-foreground">{toolName}</h3>
-                <span className="text-[10px] text-tertiary ml-auto font-mono">{PRICING_DB[toolName]?.source.replace("https://", "")}</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border-strong">
-                      {["Plan", "Type", "Monthly", "Annual", "Save/Yr", "Min Seats"].map((h) => (
-                        <th key={h} className={`text-[10px] font-semibold uppercase tracking-[0.1em] text-secondary pb-3 ${h === "Plan" || h === "Type" ? "text-left" : "text-right"}`}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((r) => (
-                      <tr key={r.plan} className="comparison-row border-b border-border">
-                        <td className="py-3 font-medium text-foreground">{r.plan}</td>
-                        <td className="py-3 text-secondary text-xs">{r.perUser ? "per user" : "flat"}</td>
-                        <td className="py-3 text-right tabular-nums text-foreground">{r.monthly !== null ? `${r.currency}${r.monthly.toLocaleString()}` : "—"}</td>
-                        <td className="py-3 text-right tabular-nums text-foreground">{r.annual !== null ? `${r.currency}${r.annual}` : <span className="text-tertiary">—</span>}</td>
-                        <td className="py-3 text-right tabular-nums">{r.savings > 0 ? <span className="text-green font-semibold">{r.currency}{r.savings}</span> : <span className="text-tertiary">—</span>}</td>
-                        <td className="py-3 text-right tabular-nums">{r.minSeats > 1 ? <span className="text-orange font-medium">{r.minSeats} min</span> : <span className="text-tertiary">1</span>}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* ━━ Data Sources ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <Section title="Data Sources" sub="All pricing verified from official vendor pages, May 7 2026" className="mt-14" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          {Object.entries(PRICING_DB).map(([name, data]) => (
-            <div key={name} className="liquid-glass-sm px-5 py-4 flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">{name}</span>
-              <a href={data.source} target="_blank" rel="noopener noreferrer" className="text-xs text-blue hover:underline truncate max-w-[180px]">{data.source.replace("https://", "").split("/").slice(0, 2).join("/")}</a>
-            </div>
-          ))}
-        </div>
       </main>
 
-      <footer className="relative z-10 border-t border-border py-8 px-6 text-center">
-        <p className="text-xs text-tertiary">AI Spend Audit · Data sourced from official pricing pages · Not financial advice</p>
+      <footer className="border-t border-border py-12 px-6 text-center bg-card">
+        <p className="text-sm font-bold uppercase tracking-widest text-foreground mb-2">Credex Rocks Implementation</p>
+        <p className="text-xs font-medium text-secondary">Built with Next.js & Tailwind CSS. Verified Pricing Engine.</p>
       </footer>
     </div>
   );
 }
 
-// ── Subcomponents ──────────────────────────────────────────────────────────
-
-function Section({ title, sub, className = "" }: { title: string; sub: string; className?: string }) {
-  return (
-    <div className={className}>
-      <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground">{title}</h2>
-      <p className="text-sm text-secondary mt-1">{sub}</p>
-    </div>
-  );
-}
-
-function StatBox({ label, value, sub, highlight }: { label: string; value: string; sub: string; highlight?: boolean }) {
-  return (
-    <div className="text-right">
-      <p className="text-[11px] uppercase tracking-[0.12em] text-secondary mb-1">{label}</p>
-      <p className={`text-2xl lg:text-3xl font-semibold tabular-nums tracking-[-0.02em] ${highlight ? "text-green" : "text-foreground"}`}>{value}</p>
-      <p className="text-[11px] text-tertiary">{sub}</p>
-    </div>
-  );
-}
+// ── Subcomponents ────────────────────────────────────────────────────────────
 
 function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; config: ToolConfig; result: ReturnType<typeof calculateSavings>; i: number; onUpdate: (i: number, p: Partial<ToolConfig>) => void }) {
   const plans = getPlansForTool(meta.name);
-  const savings = result.totalSavings;
   const cur = result.currency;
+  const planDetails = PRICING_DB[meta.name]?.plans[config.plan];
+  const isCustom = planDetails?.monthly === null;
 
   return (
-    <motion.div className="liquid-glass card-glow p-6 flex flex-col" whileHover={{ scale: 1.012, transition: SPRING }} whileTap={{ scale: 0.988, transition: SPRING }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={SPRING_SOFT}>
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: meta.accent }} />
-          <span className="text-[15px] font-semibold text-foreground">{meta.name}</span>
+    <motion.div className="flat-card p-6 flex flex-col" whileHover={{ y: -4 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_SOFT, delay: 0.1 + i * 0.05 }}>
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h3 className="text-xl font-bold tracking-tight text-foreground">{meta.name}</h3>
+          <p className="text-xs font-bold uppercase tracking-widest text-secondary mt-1">SaaS License</p>
         </div>
-        {savings > 0 && (
-          <motion.span className="text-[11px] font-semibold text-green bg-green/10 px-2.5 py-1 rounded-full" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={SPRING}>
-            Save {cur}{savings}/mo
-          </motion.span>
-        )}
-      </div>
-
-      <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-secondary mb-1.5">Plan</label>
-      <select value={config.plan} onChange={(e) => onUpdate(i, { plan: e.target.value })} className="liquid-glass-input w-full h-11 px-4 pr-10 text-sm text-foreground cursor-pointer mb-4">
-        {plans.map((p) => <option key={p} value={p}>{p}</option>)}
-      </select>
-
-      <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-secondary mb-1.5">Seats</label>
-      <div className="flex items-center gap-3 mb-5">
-        <motion.button whileTap={{ scale: 0.82 }} transition={SPRING} onClick={() => onUpdate(i, { seats: Math.max(1, config.seats - 1) })} className="w-10 h-10 rounded-full bg-surface hover:bg-surface-hover transition-colors">−</motion.button>
-        <AnimatePresence mode="wait">
-          <motion.span key={config.seats} className="flex-1 text-center text-xl font-semibold tabular-nums text-foreground" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
-            {config.seats}
-          </motion.span>
-        </AnimatePresence>
-        <motion.button whileTap={{ scale: 0.82 }} transition={SPRING} onClick={() => onUpdate(i, { seats: Math.min(500, config.seats + 1) })} className="w-10 h-10 rounded-full bg-surface hover:bg-surface-hover transition-colors">+</motion.button>
-      </div>
-
-      <div className="mt-auto pt-4 border-t border-border">
-        <div className="flex items-baseline justify-between">
-          <span className="text-2xl font-semibold tabular-nums tracking-[-0.02em] text-foreground">{cur}{result.currentSpend.toLocaleString()}</span>
-          <span className="text-xs text-tertiary">/month</span>
+        <div className="text-right">
+          <p className="text-2xl font-black tracking-tight">{isCustom ? "Custom Pricing" : `${cur}${result.currentSpend.toLocaleString()}`}</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-tertiary mt-0.5">/month</p>
         </div>
-        {result.breakdown.some((b) => b.type === "ghost_seats") && <p className="mt-2 text-[11px] text-orange leading-relaxed">⚠ Paying for unused ghost seats</p>}
-        {result.breakdown.some((b) => b.type === "annual_switch") && <p className="mt-2 text-[11px] text-blue leading-relaxed">💡 Annual billing saves {cur}{result.breakdown.find((b) => b.type === "annual_switch")?.monthlySavings}/mo</p>}
-        {result.breakdown.some((b) => b.type === "incompatible_plan") && <p className="mt-2 text-[11px] text-red-400 leading-relaxed">❌ Incompatible Plan</p>}
       </div>
+
+      <div className="space-y-5">
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">Plan Tier</label>
+          <select value={config.plan} onChange={(e) => onUpdate(i, { plan: e.target.value })} className="select-input w-full h-12 text-sm font-medium mb-1 border-border rounded-lg px-3">
+            {plans.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+          {planDetails && planDetails.minSeats > 1 && (
+            <p className="text-[10px] uppercase font-bold tracking-wider text-secondary mt-1">Requires a minimum of {planDetails.minSeats} seats</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">Total Seats</label>
+          <div className="flex items-center gap-2">
+            <button onClick={() => onUpdate(i, { seats: Math.max(1, config.seats - 1) })} className="control-btn w-12 h-12 rounded-xl border border-border flex items-center justify-center font-bold text-lg hover:bg-accent/10 transition-colors">−</button>
+            <AnimatePresence mode="wait">
+              <motion.div key={config.seats} className="flex-1 h-12 flex items-center justify-center bg-card border border-border rounded-xl" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.1 }}>
+                <span className="text-lg font-black">{config.seats}</span>
+              </motion.div>
+            </AnimatePresence>
+            <button onClick={() => onUpdate(i, { seats: Math.min(500, config.seats + 1) })} className="control-btn w-12 h-12 rounded-xl border border-border flex items-center justify-center font-bold text-lg hover:bg-accent/10 transition-colors">+</button>
+          </div>
+          {planDetails && planDetails.minSeats > 1 && config.seats < planDetails.minSeats && (
+            <p className="text-[10px] uppercase font-bold tracking-wider text-orange-500 mt-2">Note: You will be billed for the minimum {planDetails.minSeats} seats.</p>
+          )}
+        </div>
+      </div>
+
+      {(result.totalSavings > 0 || result.breakdown.length > 0) && (
+        <div className="mt-6 pt-6 border-t border-border">
+          {result.totalSavings > 0 && (
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-widest text-secondary">Optimized</span>
+              <span className="text-sm font-bold text-green-500">Save {cur}{result.totalSavings}/mo</span>
+            </div>
+          )}
+          {result.breakdown.map((b, idx) => (
+            <p key={idx} className={`text-xs font-medium mt-1 ${b.type === "ghost_seats" ? "text-foreground" : b.type === "incompatible_plan" ? "text-red-500 font-bold" : "text-secondary"}`}>
+              {b.type === "ghost_seats" ? "⚠️ Ghost seats detected." : b.type === "incompatible_plan" ? "❌ Incompatible Plan." : "✓ Annual discount available."}
+            </p>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 }
