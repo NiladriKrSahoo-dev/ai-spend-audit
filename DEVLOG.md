@@ -4,7 +4,7 @@
 
 **What I did:** I Initialized the Next.js 15 project with App Router and Tailwind CSS.
 
-- I set up a professional folder architecture (src/lib, src/components, src/types)
+- I started with setting up a professional folder architecture.
 - I generated the 11 mandatory project documentation files.
 - I Reseached pricing for Cursor, ChatGPT, and Claude.
 
@@ -36,32 +36,35 @@
 
 **What I did:**
 
-Refactored src/lib/audit/auditEngine.ts to fix a critical logic error in the PRICING_DB regarding the Claude "Max" plan. Updated the configuration to perUser: true with a $100/mo rate to support accurate multi-seat calculations.
+- I started by trying out a new frontend UI similar to that of the official Credex website.
 
-Developed and implemented a validatePricingData utility function to programmatically audit the pricing database for inconsistencies, such as plans with seat minimums incorrectly marked as individual tiers.
+- I also found a weird bug in the Claude pricing data where the 'Max' plan was showing up as $0. I fixed the settings so it correctly bills at $100 per seat and updated the code so it works for team audits.
 
-Modified app/page.tsx to update the primary hero headline to "POTENTIAL SAVINGS" for better information architecture and clarity.
+- To make sure I don't mess up the data again, I built a "sanity check" helper. It’s basically a script that scans the database and flags anything that looks wrong—like a plan that needs a minimum number of seats but isn't marked as a per-user plan—before it breaks the site.
 
-Re-engineered the initial state logic to ensure all tool seat counts start at zero. Implemented localStorage versioning (auditConfigs_v2) to prevent stale browser cache from interfering with new logic deployments.
+- I changed the main header from "TOTAL PROJECTED" to "POTENTIAL SAVINGS." I figured out people would get confused on whether if that is how much they are already saving or if they can potentially save.
 
-Resolved a synchronization blocker where Vercel was displaying outdated build snapshots by performing a clean-slate source update directly on GitHub.
+- I reset the whole form so it starts at 0 seats instead of random numbers. I also updated the storage key to v2 so anyone visiting the site actually sees the new layout instead of old cached data.
+
+- I spent some time fixing a sync issue between my code and the live Vercel site to make sure the version people actually see is the latest one.
 
 **What I learned:**
 
-The importance of implementing defensive programming patterns, such as internal data validators, to catch human error in hardcoded databases.
+I realized that writing code to check my own work is way better than trying to manually check 50 different prices myself. It saves a lot of time and catches things I’d probably miss.
 
-How to manage React state synchronization across different environments using cache-busting techniques in localStorage.
-
-Strategies for troubleshooting Vercel deployment pipelines when local Git synchronization becomes desynced from the production environment.
+I learned that browser cache is actually pretty annoying; sometimes you have to change the storage keys just to make sure the user is seeing the most recent version of the app.
 
 **Blockers / what I'm stuck on:**
 
-Spent significant time debugging a "Frozen Link" issue where the live URL was reflecting old code despite successful GitHub commits. Solved by identifying the deployment snapshot behavior in Vercel and forcing a new production build. No active technical blockers remainin g.
+I got really stuck on a "frozen link" issue with Vercel. I kept pushing new code, but the website wouldn't change because I was looking at an old version of the site without realizing it. It took a while to figure out, but I eventually fixed it by forcing a brand new build.
 
 **Plan for tomorrow:**
 
-Begin the USER_INTERVIEWS.md requirement by reaching out to three local business owners or founders to gather feedback on the audit tool.
+I’m going to stop coding for a bit now and focus on the business side too. I need to do three user interviews with actual founders or managers to see what they think of the tool.
 
-Draft the initial structure for ECONOMICS.md to document the unit economics and the math behind the "defensible" pricing engine.
+I’ll start working on the ECONOMICS.md file to explain the math and how the audit engine actually works in my project.
 
-Start writing the first set of automated logic tests as required in the TESTS.md specification.
+I want to start writing some automated tests so the pricing logic doesn't break when I add more tools later.
+
+
+
