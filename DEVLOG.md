@@ -1,59 +1,31 @@
-## Day 1 - 2026-05-07
+## Day 1 — 2026-05-07
 
-**Hours worked:** 1.5 hours
+**Hours worked:** 1.5
 
-1. **Tasks Completed:**
+**What I did:** I Initialized the Next.js 15 project with App Router and Tailwind CSS.
 
-Initialized Next.js 15 project with App Router and Tailwind CSS.
+- I set up a professional folder architecture (src/lib, src/components, src/types)
+- I generated the 11 mandatory project documentation files.
+- I Reseached pricing for Cursor, ChatGPT, and Claude.
 
-Set up professional folder architecture (src/lib, src/components, src/types).
+**What I learned:** How to manage complex project scaffolding in a macOS terminal and the importance of "Defensible Logic" in SaaS auditing.
 
-Generated 11 core project documentation files (GTM, Economics, Architecture, etc.).
+**Blockers / what I'm stuck on:** Mapping complex seat-based pricing variations into a scalable logic engine architecture.
 
-Researched primary pricing data for Cursor, ChatGPT, and Claude.
+**Plan for tomorrow:** Build the core TypeScript Audit Engine and design the initial frontend UI.
 
-2. **Learning & Technical Skills:**
+## Day 2 — 2026-05-08
 
-Learned to navigate project scaffolding in a macOS terminal environment.
+**Hours worked:** 2.5
 
-Mastered the concept of "Defensible Logic" for SaaS auditing applications.
+**What I did:**
 
-3. **Current Blockers:**
+- I developed auditEngine.ts to handle real-time monthly vs. annual savings calculations.
+- I designed an Apple-inspired "Liquid Glass" UI using Tailwind CSS backdrop blurs and integrated the frontend with the logic engine.
+- Verified the local build and prepared the repository for deployment.
 
-I initially struggled to translate complex, real-world seat-based pricing rules into a clean mathematical logic engine.
+**What I learned:** Advanced CSS techniques for "Squircle" radii and high-density blurs, as well as handling client-side hydration in Next.js 15 for dynamic math.
 
-4. **Planned Focus for Tomorrow:**
+**Blockers / what I'm stuck on:** Seat minimums (e.g. Claude Team’s 5-seat rule) breaking standard multiplication logic. Resolved this by implementing conditional validation to flag Ghost Seats.
 
-Build the core TypeScript Audit Engine and design the frontend UI.
-
-## Day 2 - 2026-05-08
-
-Hours worked: 2.5 hours
-
-1. **Tasks Completed:**
-
-Developed auditEngine.ts to calculate real-time monthly vs. annual savings.
-
-Designed a "Liquid Glass" Apple-inspired UI using Tailwind CSS and backdrop blurs.
-
-Integrated the frontend with the logic engine to display live savings data.
-
-Verified the build locally and prepared files for GitHub and Vercel deployment.
-
-2. **Learning & Technical Skills:**
-
-Applied advanced CSS techniques for high-density blurs and "Squircle" corner radii.
-
-Learned to handle client-side hydration in Next.js 15 for dynamic math calculations.
-
-3. **Current Blockers:**
-
-Pricing Edge Cases: Found that seat minimums (e.g., Claude Team’s 5-seat rule) break standard multiplication logic.
-
-Solution: Implemented conditional validation within the engine to flag "Ghost Seats."
-
-4. **Planned Focus for Tomorrow:**
-
-Populate business-specific documentation (GTM.md and Economics.md).
-
-Deploy the project live to Vercel and set up automatic GitHub actions.
+**Plan for tomorrow:** Write the business-specific documentation (GTM.md and Economics.md) and deploy the project live to Vercel.
