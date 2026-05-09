@@ -93,7 +93,7 @@ export default function Home() {
       <nav className="liquid-glass-nav sticky top-0 z-50 flex items-center justify-between px-6 lg:px-10 py-3.5">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-[8px] bg-indigo flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M2 12h4M18 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" /></svg>
           </div>
           <span className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">AI Spend Audit</span>
         </div>
@@ -108,7 +108,7 @@ export default function Home() {
             <div className="space-y-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-secondary">Total Projected Savings</p>
               <AnimatePresence mode="wait">
-                <motion.h1 key={totals.savings} className={`text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-[-0.04em] tabular-nums ${totals.savings > 0 ? "text-green" : "text-tertiary"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={SPRING}>
+                <motion.h1 key={totals.savings} className={`text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-[-0.04em] tabular-nums ${totals.savings > 0 ? "text-green" : "text-tertiary"}`} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}>
                   ${totals.savings.toLocaleString()}<span className="text-2xl text-secondary font-normal">/mo</span>
                 </motion.h1>
               </AnimatePresence>
@@ -160,12 +160,12 @@ export default function Home() {
             <Section title="Key Insights" sub={`${insights.length} optimisation${insights.length > 1 ? "s" : ""} found`} className="mt-14" />
             <div className="space-y-3 mt-6">
               {insights.map((ins, i) => (
-                <motion.div key={i} className="liquid-glass-sm px-6 py-5 flex items-start gap-4" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ ...SPRING_SOFT, delay: 0.1 + i * 0.05 }}>
+                <motion.div key={i} className="liquid-glass-sm px-6 py-5 flex items-start gap-4" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ ...SPRING_SOFT, delay: 0.05 * i }}>
                   <div className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${ins.type === "ghost" ? "bg-orange/10" : "bg-blue/10"}`}>
                     {ins.type === "ghost" ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange"><path d="M12 2a7 7 0 0 0-7 7v4l-2 4h18l-2-4V9a7 7 0 0 0-7-7z" /><circle cx="9" cy="11" r="1" /><circle cx="15" cy="11" r="1" /></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" /></svg>
                     ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 9h6M9 15h6" /></svg>
                     )}
                   </div>
                   <div className="min-w-0">
@@ -235,7 +235,7 @@ export default function Home() {
   );
 }
 
-// ── Subcomponents ────────────────────────────────────────────────────────────
+// ── Subcomponents ──────────────────────────────────────────────────────────
 
 function Section({ title, sub, className = "" }: { title: string; sub: string; className?: string }) {
   return (
@@ -262,7 +262,7 @@ function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; confi
   const cur = result.currency;
 
   return (
-    <motion.div className="liquid-glass card-glow p-6 flex flex-col" whileHover={{ scale: 1.012, transition: SPRING }} whileTap={{ scale: 0.988, transition: SPRING }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_SOFT, delay: 0.12 + i * 0.05 }}>
+    <motion.div className="liquid-glass card-glow p-6 flex flex-col" whileHover={{ scale: 1.012, transition: SPRING }} whileTap={{ scale: 0.988, transition: SPRING }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={SPRING_SOFT}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: meta.accent }} />
@@ -282,11 +282,13 @@ function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; confi
 
       <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-secondary mb-1.5">Seats</label>
       <div className="flex items-center gap-3 mb-5">
-        <motion.button whileTap={{ scale: 0.82 }} transition={SPRING} onClick={() => onUpdate(i, { seats: Math.max(1, config.seats - 1) })} className="w-10 h-10 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-secondary text-lg transition-colors" aria-label="Decrease">−</motion.button>
+        <motion.button whileTap={{ scale: 0.82 }} transition={SPRING} onClick={() => onUpdate(i, { seats: Math.max(1, config.seats - 1) })} className="w-10 h-10 rounded-full bg-surface hover:bg-surface-hover transition-colors">−</motion.button>
         <AnimatePresence mode="wait">
-          <motion.span key={config.seats} className="flex-1 text-center text-xl font-semibold tabular-nums text-foreground" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }}>{config.seats}</motion.span>
+          <motion.span key={config.seats} className="flex-1 text-center text-xl font-semibold tabular-nums text-foreground" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
+            {config.seats}
+          </motion.span>
         </AnimatePresence>
-        <motion.button whileTap={{ scale: 0.82 }} transition={SPRING} onClick={() => onUpdate(i, { seats: Math.min(500, config.seats + 1) })} className="w-10 h-10 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-secondary text-lg transition-colors" aria-label="Increase">+</motion.button>
+        <motion.button whileTap={{ scale: 0.82 }} transition={SPRING} onClick={() => onUpdate(i, { seats: Math.min(500, config.seats + 1) })} className="w-10 h-10 rounded-full bg-surface hover:bg-surface-hover transition-colors">+</motion.button>
       </div>
 
       <div className="mt-auto pt-4 border-t border-border">
@@ -295,7 +297,8 @@ function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; confi
           <span className="text-xs text-tertiary">/month</span>
         </div>
         {result.breakdown.some((b) => b.type === "ghost_seats") && <p className="mt-2 text-[11px] text-orange leading-relaxed">⚠ Paying for unused ghost seats</p>}
-        {result.breakdown.some((b) => b.type === "annual_switch") && <p className="mt-2 text-[11px] text-blue leading-relaxed">💡 Annual billing saves {cur}{result.breakdown.find((b) => b.type === "annual_switch")!.monthlySavings}/mo</p>}
+        {result.breakdown.some((b) => b.type === "annual_switch") && <p className="mt-2 text-[11px] text-blue leading-relaxed">💡 Annual billing saves {cur}{result.breakdown.find((b) => b.type === "annual_switch")?.monthlySavings}/mo</p>}
+        {result.breakdown.some((b) => b.type === "incompatible_plan") && <p className="mt-2 text-[11px] text-red-400 leading-relaxed">❌ Incompatible Plan</p>}
       </div>
     </motion.div>
   );
