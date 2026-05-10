@@ -50,12 +50,11 @@
 
 **What I learned:**
 
-I realized that writing code to check my own work is way better than trying to manually check 50 different prices myself. It saves a lot of time and catches things I’d probably miss.
+I realized that writing code to check my own work is way better than trying to manually check 50 different prices myself. It saves me a lot of time and catches things I’d probably miss.
 
-I learned that browser cache is actually pretty annoying; sometimes you have to change the storage keys just to make sure the user is seeing the most recent version of the app.
+I learned that browser cache is actually pretty annoying. Sometimes you have to change the storage keys just to make sure the user is seeing the most recent version of the app.
 
 **Blockers / what I'm stuck on:**
-
 I got really stuck on a "frozen link" issue with Vercel. I kept pushing new code, but the website wouldn't change because I was looking at an old version of the site without realizing it. It took a while to figure out, but I eventually fixed it by forcing a brand new build.
 
 **Plan for tomorrow:**
@@ -66,5 +65,16 @@ I’ll start working on the ECONOMICS.md file to explain the math and how the au
 
 I want to start writing some automated tests so the pricing logic doesn't break when I add more tools later.
 
+## Day 4 — 2026-05-10
+
+**Hours worked:** 5
+
+**What I did:** Finished the `ECONOMICS.md` file today. I had to run the numbers for LTV, CAC, and figure out how to hit $1M ARR in 18 months. I did a "Profitability Check" to prove the tool actually makes sense as a real business and not just a toy.
+
+**What I learned:** SaaS math is basically just a big logic puzzle. Also, cold outreach is a massive grind. It's way harder to get a founder on a call or message than it is to debug broken code.
+
+**Blockers / what I'm stuck on:** Getting ghosted by everyone on Discord and Slack for the user interviews. It’s so annoying, I’m sending out messages and just getting left on read. 
+
+**Plan for tomorrow:** Hooking up the LLM for the "AI Advice" layer using Vercel AI SDK and finally writing those automated tests so I know for a fact the math isn't going to break.
 
 
