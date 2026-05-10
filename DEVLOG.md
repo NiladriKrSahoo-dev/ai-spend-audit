@@ -20,7 +20,7 @@
 
 **What I did:**
 
-- I developed auditEngine.ts to handle real-time monthly vs. annual savings calculations.
+- I developed **auditEngine.ts** to handle real-time monthly vs. annual savings calculations.
 - I designed an Apple-inspired "Liquid Glass" UI using Tailwind CSS backdrop blurs and integrated the frontend with the logic engine.
 - Verified the local build and prepared the repository for deployment.
 
@@ -28,7 +28,7 @@
 
 **Blockers / what I'm stuck on:** Seat minimums (e.g. Claude Team’s 5-seat rule) breaking standard multiplication logic. Resolved this by implementing conditional validation to flag Ghost Seats.
 
-**Plan for tomorrow:** Write the business-specific documentation (GTM.md and Economics.md) and deploy the project live to Vercel.
+**Plan for tomorrow:** Write the business-specific documentation **(GTM.md and Economics.md)** and deploy the project live to Vercel.
 
 ## Day 3 — 2026-05-09
 
@@ -61,7 +61,7 @@ I got really stuck on a "frozen link" issue with Vercel. I kept pushing new code
 
 I’m going to stop coding for a bit now and focus on the business side too. I need to do three user interviews with actual founders or managers to see what they think of the tool.
 
-I’ll start working on the ECONOMICS.md file to explain the math and how the audit engine actually works in my project.
+I’ll start working on the **ECONOMICS.md** file to explain the math and how the audit engine actually works in my project.
 
 I want to start writing some automated tests so the pricing logic doesn't break when I add more tools later.
 
@@ -69,7 +69,7 @@ I want to start writing some automated tests so the pricing logic doesn't break 
 
 **Hours worked:** 5
 
-**What I did:** Finished the `ECONOMICS.md` file today. I had to run the numbers for LTV, CAC, and figure out how to hit $1M ARR in 18 months. I did a "Profitability Check" to prove the tool actually makes sense as a real business and not just a toy.
+**What I did:** Finished the **ECONOMICS.md** file today. I had to run the numbers for LTV, CAC, and figure out how to hit $1M ARR in 18 months. I did a "Profitability Check" to prove the tool actually makes sense as a real business and not just a toy.
 
 **What I learned:** SaaS math is basically just a big logic puzzle. Also, cold outreach is a massive grind. It's way harder to get a founder on a call or message than it is to debug broken code.
 
