@@ -25,14 +25,11 @@ export default function Home() {
     TOOLS.map((t) => ({ plan: t.defaultPlan, seats: t.defaultSeats })),
   );
 
-  // Extracting directly to ensure 'append' is captured correctly
-  const chat = useChat({
+  // ✅ Standard destructuring - most stable way to get the functions
+  const { messages, append, isLoading, error } = useChat({
     api: "/api/chat",
+    initialMessages: [],
   });
-
-  const messages = chat.messages || [];
-  const isLoading = chat.isLoading || false;
-  const append = chat.append;
 
   const results = useMemo(() => TOOLS.map((t, i) => {
     try {
@@ -51,9 +48,12 @@ export default function Home() {
     return { current: cur, optimised: opt, savings: cur - opt };
   }, [results]);
 
-  const handleGetAdvice = () => {
+  const handleGetAdvice = async () => {
+    // Safety log to check status in console
+    console.log("Button clicked. Append type:", typeof append);
+
     if (typeof append !== 'function') {
-      console.error("AI SDK 'append' is not a function yet.");
+      alert("AI Engine is still warming up. Please try again in 2 seconds.");
       return;
     }
 
@@ -61,10 +61,14 @@ export default function Home() {
     const topWaste = sortedResults[0];
     const biggestWasteName = topWaste && topWaste.totalSavings > 0 ? topWaste.toolName : "General Overhead";
 
-    append({
-      role: "user",
-      content: `Analyze my AI spend audit. I can save $${totals.savings} per month. My current spend is $${totals.current}. The biggest waste is from ${biggestWasteName}. Give me a short, punchy 3-sentence executive summary on how to optimize this.`
-    });
+    try {
+      await append({
+        role: "user",
+        content: `Analyze my AI spend audit. I can save $${totals.savings} per month. My current spend is $${totals.current}. The biggest waste is from ${biggestWasteName}. Give me a short, punchy 3-sentence executive summary on how to optimize this.`
+      });
+    } catch (e) {
+      console.error("Append failed:", e);
+    }
   };
 
   useEffect(() => {
@@ -133,6 +137,13 @@ export default function Home() {
               </div>
             </motion.div>
 
+            {/* Error Display */}
+            {error && (
+              <div className="mt-4 text-center text-red-500 text-sm font-bold">
+                ⚠️ API Error: {error.message}
+              </div>
+            )}
+
             {messages.filter((m: any) => m.role === 'assistant').length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -157,7 +168,8 @@ export default function Home() {
   );
 }
 
-function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; config: ToolConfig; result: ReturnType<typeof calculateSavings>; i: number; onUpdate: (i: number, p: Partial<ToolConfig>) => void }) {
+// ToolCard subcomponent (identical to your working UI)
+function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; config: ToolConfig; result: any; i: number; onUpdate: any }) {
   const validPlans = typeof getPlansForTool === 'function' ? getPlansForTool(meta.name) : [config.plan];
   const cur = result.currency || "$";
 
