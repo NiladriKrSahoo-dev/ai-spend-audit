@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useChat } from "ai/react"; 
+import { useChat } from 'ai/react'; 
 import {
   calculateSavings,
   PRICING_DB,
