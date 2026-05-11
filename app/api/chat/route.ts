@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { generateText } from "ai"; // Use generateText for a simpler response
+import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 
 export const maxDuration = 30;
@@ -9,16 +9,17 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
     const prompt = messages[messages.length - 1].content;
 
+    // We'll use the most stable model name string
     const { text } = await generateText({
-      model: google("gemini-1.5-pro-latest"),
+      model: google("gemini-1.5-pro"),
       prompt: prompt,
     });
 
-    // Send back pure text that our frontend can read instantly
     return new Response(text);
     
   } catch (error: any) {
-    console.error("AI Error:", error);
-    return new Response("AI is temporarily unavailable. Check your API key.", { status: 500 });
+    console.error("DEBUG - AI Backend Error:", error);
+    // If this shows up, your GOOGLE_GENERATIVE_AI_API_KEY is missing or invalid in Vercel
+    return new Response(`Error: ${error.message || "API Key issue"}`, { status: 500 });
   }
 }
