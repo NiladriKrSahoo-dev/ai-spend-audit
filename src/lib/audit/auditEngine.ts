@@ -59,7 +59,7 @@ export const PRICING_DB: Record<string, ToolPricing> = {
       Free:       { monthly: 0,    annual: null, annualTotal: null,  minSeats: 1, perUser: false, currency: "$" },
       Pro:        { monthly: 20,   annual: 17,   annualTotal: 204,   minSeats: 1, perUser: false, currency: "$" },
       Team:       { monthly: 30,   annual: 25,   annualTotal: 300,   minSeats: 5, perUser: true,  currency: "$" },
-      Max: { monthly: 100, annual: null, annualTotal: null, minSeats: 1, perUser: true, currency: "$" },
+      Max:        { monthly: 100,  annual: null, annualTotal: null,  minSeats: 1, perUser: true,  currency: "$" },
       Enterprise: { monthly: null, annual: null, annualTotal: null,  minSeats: 1, perUser: true,  currency: "$" },
     },
   },
@@ -305,8 +305,9 @@ export function getPlansForTool(toolName: string): string[] {
   const tool = PRICING_DB[toolName];
   return tool ? Object.keys(tool.plans) : [];
 }
+
 // ---------------------------------------------------------------------------
-// Pricing Data Validator (Sanity Check)
+// Validation Utility
 // ---------------------------------------------------------------------------
 
 export function validatePricingData(): string[] {
@@ -315,13 +316,16 @@ export function validatePricingData(): string[] {
   for (const [toolName, tool] of Object.entries(PRICING_DB)) {
     for (const [planName, plan] of Object.entries(tool.plans)) {
       if (plan.minSeats > 1 && !plan.perUser) {
-        warnings.push(`[${toolName} - ${planName}] Logic Error: minSeats > 1 but perUser is false.`);
+        warnings.push(`[${toolName} - ${planName}] minSeats > 1 but perUser is false.`);
       }
       if (plan.monthly !== null && plan.monthly < 0) {
-        warnings.push(`[${toolName} - ${planName}] Pricing Error: Negative monthly price.`);
+        warnings.push(`[${toolName} - ${planName}] has a negative monthly price.`);
       }
-      if (!plan.currency) {
-        warnings.push(`[${toolName} - ${planName}] Data Error: Missing currency symbol.`);
+      if (plan.annual !== null && plan.annual < 0) {
+        warnings.push(`[${toolName} - ${planName}] has a negative annual price.`);
+      }
+      if (!plan.currency || plan.currency.trim() === "") {
+        warnings.push(`[${toolName} - ${planName}] is missing a currency symbol.`);
       }
     }
   }
