@@ -1,15 +1,10 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useChat } from "ai/react"; 
-import {
-  calculateSavings,
-  PRICING_DB,
-  getPlansForTool,
-} from "../src/lib/audit/auditEngine"; // ✅ This path is now 100% correct for your folder structure
+import { motion } from "framer-motion"; 
+import { useChat } from "@ai-sdk/react"; // ✅ FIXED: The new package name for AI SDK hooks
+import { calculateSavings } from "../src/lib/audit/auditEngine"; 
 
-const SPRING = { type: "spring" as const, stiffness: 400, damping: 28 };
 const SPRING_SOFT = { type: "spring" as const, stiffness: 300, damping: 24 };
 
 interface ToolMeta { name: string; defaultPlan: string; defaultSeats: number; }
@@ -63,13 +58,11 @@ export default function Home() {
   );
 
   const totals = useMemo(() => {
-    let cur = 0, opt = 0, withSavings = 0, totalSeats = 0;
-    results.forEach((r, i) => {
+    let cur = 0, opt = 0;
+    results.forEach((r) => {
       if (r.currency === "$") { cur += r.currentSpend; opt += r.suggestedSpend; }
-      if (r.totalSavings > 0) withSavings++;
-      totalSeats += configs[i].seats;
     });
-    return { current: cur, optimised: opt, savings: cur - opt, annual: (cur - opt) * 12, withSavings, totalSeats };
+    return { current: cur, optimised: opt, savings: cur - opt };
   }, [results]);
 
   const update = useCallback((i: number, patch: Partial<ToolConfig>) => {
@@ -80,34 +73,23 @@ export default function Home() {
     });
   }, []);
 
-  const insights = useMemo(() => {
-    const arr: { tool: string; text: string; type: "ghost" | "annual" }[] = [];
-    results.forEach((r, i) => {
-      r.breakdown.forEach((b) => {
-        if (b.type === "ghost_seats") arr.push({ tool: TOOLS[i].name, text: `${b.description.split(".")[0]}.`, type: "ghost" as const });
-        if (b.type === "annual_switch") arr.push({ tool: TOOLS[i].name, text: `Switch to annual billing to save ${r.currency}${b.monthlySavings}/mo.`, type: "annual" as const });
-      });
-    });
-    return arr;
-  }, [results]);
-
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen relative bg-slate-950 text-white p-8">
+    <div className="min-h-screen bg-slate-950 text-white p-6 font-sans">
       <main className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-black mb-4">CREDEX AI AUDIT</h1>
-          <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl">
-             <p className="text-sm uppercase tracking-widest text-slate-400 mb-2">Potential Savings</p>
-             <p className="text-5xl font-mono text-green-400">${totals.savings.toLocaleString()}/mo</p>
+        <header className="text-center mb-12">
+          <h1 className="text-3xl font-black tracking-tighter mb-4 text-slate-100 uppercase">Credex AI Auditor</h1>
+          <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
+             <p className="text-xs uppercase font-bold text-slate-500 mb-2">Monthly Potential Savings</p>
+             <p className="text-6xl font-mono text-green-400 font-bold tracking-tight">${totals.savings.toLocaleString()}</p>
              
              <button 
                 onClick={handleGetAdvice}
                 disabled={isLoading || totals.savings === 0}
-                className="mt-6 bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-slate-200 transition-colors disabled:opacity-30"
+                className="mt-8 bg-white text-black px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform disabled:opacity-30 disabled:hover:scale-100"
              >
-               {isLoading ? "Consulting Advisor..." : "Get Strategic Advice"}
+               {isLoading ? "Consulting Strategic AI..." : "Get Strategic Summary"}
              </button>
           </div>
           
@@ -115,25 +97,25 @@ export default function Home() {
             <motion.div 
               initial={{ opacity: 0, y: 10 }} 
               animate={{ opacity: 1, y: 0 }}
-              className="mt-6 p-6 bg-blue-900/20 border border-blue-800 rounded-2xl text-left italic text-blue-200"
+              className="mt-6 p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-left"
             >
-              {messages.filter(m => m.role === 'assistant').map(m => (
-                <p key={m.id}>{m.content}</p>
-              ))}
+              <p className="text-blue-300 italic text-sm leading-relaxed">
+                {messages.filter(m => m.role === 'assistant').map(m => m.content).join('')}
+              </p>
             </motion.div>
           )}
-        </div>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {TOOLS.map((t, i) => (
-            <div key={t.name} className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-              <h3 className="font-bold text-xl">{t.name}</h3>
-              <div className="mt-4 flex items-center justify-between">
-                <span>Seats: {configs[i].seats}</span>
-                <div className="flex gap-2">
-                  <button onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} className="bg-slate-800 w-8 h-8 rounded">-</button>
-                  <button onClick={() => update(i, { seats: configs[i].seats + 1 })} className="bg-slate-800 w-8 h-8 rounded">+</button>
-                </div>
+            <div key={t.name} className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 flex justify-between items-center">
+              <div>
+                <h3 className="font-bold text-lg text-slate-200">{t.name}</h3>
+                <p className="text-xs text-slate-500 uppercase font-bold mt-1">Seats: {configs[i].seats}</p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} className="bg-slate-800 hover:bg-slate-700 w-10 h-10 rounded-xl font-bold">-</button>
+                <button onClick={() => update(i, { seats: configs[i].seats + 1 })} className="bg-slate-800 hover:bg-slate-700 w-10 h-10 rounded-xl font-bold">+</button>
               </div>
             </div>
           ))}
