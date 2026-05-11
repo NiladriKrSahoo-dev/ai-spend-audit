@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { streamText } from "ai";
+import { generateText } from "ai"; // Use generateText for a simpler response
 import { google } from "@ai-sdk/google";
 
 export const maxDuration = 30;
@@ -7,30 +7,18 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
+    const prompt = messages[messages.length - 1].content;
 
-    const result = await streamText({
-      // We'll use the most stable model ID format
-      model: google("gemini-1.5-pro"), 
-      messages,
+    const { text } = await generateText({
+      model: google("gemini-1.5-pro-latest"),
+      prompt: prompt,
     });
 
-    // Check for any valid stream response method
-    if (result.toDataStreamResponse) {
-      return result.toDataStreamResponse();
-    }
-    
-    if (result.toTextStreamResponse) {
-      return result.toTextStreamResponse();
-    }
-
-    return result.toAIStreamResponse();
+    // Send back pure text that our frontend can read instantly
+    return new Response(text);
     
   } catch (error: any) {
-    console.error("AI Engine Backend Error:", error);
-    // This sends the actual error back to your frontend so we can see it
-    return new Response(
-      JSON.stringify({ error: error.message || "Internal Server Error" }), 
-      { status: 500 }
-    );
+    console.error("AI Error:", error);
+    return new Response("AI is temporarily unavailable. Check your API key.", { status: 500 });
   }
 }
