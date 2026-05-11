@@ -25,10 +25,14 @@ export default function Home() {
     TOOLS.map((t) => ({ plan: t.defaultPlan, seats: t.defaultSeats })),
   );
 
-  // @ts-ignore
-  const { messages, append, isLoading } = useChat({
+  // Extracting directly to ensure 'append' is captured correctly
+  const chat = useChat({
     api: "/api/chat",
-  }) as any;
+  });
+
+  const messages = chat.messages || [];
+  const isLoading = chat.isLoading || false;
+  const append = chat.append;
 
   const results = useMemo(() => TOOLS.map((t, i) => {
     try {
@@ -48,6 +52,11 @@ export default function Home() {
   }, [results]);
 
   const handleGetAdvice = () => {
+    if (typeof append !== 'function') {
+      console.error("AI SDK 'append' is not a function yet.");
+      return;
+    }
+
     const sortedResults = [...results].sort((a, b) => (b.totalSavings || 0) - (a.totalSavings || 0));
     const topWaste = sortedResults[0];
     const biggestWasteName = topWaste && topWaste.totalSavings > 0 ? topWaste.toolName : "General Overhead";
@@ -60,7 +69,6 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    // Using v2 to avoid conflicts with your old cached data
     const saved = localStorage.getItem("auditConfigs_v2");
     if (saved) {
       try { setConfigs(JSON.parse(saved)); } catch (e) {}
@@ -79,10 +87,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans relative overflow-hidden selection:bg-accent/30 selection:text-white">
-      {/* ── Background Elements ─────────────────────────────────────── */}
       <div className="hero-grid absolute inset-0 z-0 h-[80vh]" aria-hidden="true" />
 
-      {/* ── Nav ──────────────────────────────────────────────────────── */}
       <nav className="relative z-50 flex items-center justify-between px-6 lg:px-10 py-5">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded bg-foreground flex items-center justify-center">
@@ -94,10 +100,8 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ── Main Content ────────────────────────────────────────────── */}
       <main className="relative z-10 px-6 lg:px-10 pb-24 pt-12">
         <div className="max-w-6xl mx-auto">
-          {/* ── Header Area ─────────────────────────────────────────── */}
           <header className="mb-20">
             <motion.div className="max-w-3xl" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter leading-[1.1] mb-6">
@@ -142,7 +146,6 @@ export default function Home() {
             )}
           </header>
 
-          {/* ── Tools Grid ──────────────────────────────────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {TOOLS.map((meta, i) => (
               <ToolCard key={meta.name} meta={meta} config={configs[i]} result={results[i]} i={i} onUpdate={update} />
@@ -153,8 +156,6 @@ export default function Home() {
     </div>
   );
 }
-
-// ── Subcomponents ──────────────────────────────────────────────────────────
 
 function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; config: ToolConfig; result: ReturnType<typeof calculateSavings>; i: number; onUpdate: (i: number, p: Partial<ToolConfig>) => void }) {
   const validPlans = typeof getPlansForTool === 'function' ? getPlansForTool(meta.name) : [config.plan];
