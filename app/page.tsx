@@ -2,12 +2,12 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useChat } from "ai/react"; // Added AI SDK hook
+import { useChat } from "ai/react"; 
 import {
   calculateSavings,
   PRICING_DB,
   getPlansForTool,
-} from "@/src/lib/audit/auditEngine";
+} from "../src/lib/audit/auditEngine"; // CHANGED: Safer relative path for Vercel
 
 const SPRING = { type: "spring" as const, stiffness: 400, damping: 28 };
 const SPRING_SOFT = { type: "spring" as const, stiffness: 300, damping: 24 };
@@ -28,6 +28,30 @@ export default function Home() {
   const [configs, setConfigs] = useState<ToolConfig[]>(
     TOOLS.map((t) => ({ plan: t.defaultPlan, seats: t.defaultSeats })),
   );
+
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem("auditConfigs_v2");
+    if (saved) {
+      try { setConfigs(JSON.parse(saved)); } catch (e) {}
+    }
+  }, []);
+
+  // ── Calculation Engine ──────────────────────────────────────────
+  const results = useMemo(
+    () => TOOLS.map((t, i) => calculateSavings(t.name, configs[i].seats, configs[i].plan, "monthly")),
+    [configs],
+  );
+
+  const totals = useMemo(() => {
+    let cur = 0, opt = 0, withSavings = 0, totalSeats = 0;
+    results.forEach((r, i) => {
+      if (r.currency === "$") { cur += r.currentSpend; opt += r.suggestedSpend; }
+      if (r.totalSavings > 0) withSavings++;
+      totalSeats += configs[i].seats;
+    });
+    return { current: cur, optimised: opt, savings: cur - opt, annual: (cur - opt) * 12, withSavings, totalSeats };
+  }, [results, configs]);
 
   // ── AI Integration ──────────────────────────────────────────────
   const { messages, append, isLoading } = useChat({
@@ -50,29 +74,6 @@ export default function Home() {
       }
     });
   };
-
-  useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem("auditConfigs_v2");
-    if (saved) {
-      try { setConfigs(JSON.parse(saved)); } catch (e) {}
-    }
-  }, []);
-
-  const results = useMemo(
-    () => TOOLS.map((t, i) => calculateSavings(t.name, configs[i].seats, configs[i].plan, "monthly")),
-    [configs],
-  );
-
-  const totals = useMemo(() => {
-    let cur = 0, opt = 0, withSavings = 0, totalSeats = 0;
-    results.forEach((r, i) => {
-      if (r.currency === "$") { cur += r.currentSpend; opt += r.suggestedSpend; }
-      if (r.totalSavings > 0) withSavings++;
-      totalSeats += configs[i].seats;
-    });
-    return { current: cur, optimised: opt, savings: cur - opt, annual: (cur - opt) * 12, withSavings, totalSeats };
-  }, [results, configs]);
 
   const update = useCallback((i: number, patch: Partial<ToolConfig>) => {
     setConfigs((prev) => {
@@ -144,7 +145,7 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* ━━ Strategic Advisor (NEW AI SECTION) ━━━━━━━━━━━━━━━━━━ */}
+          {/* ━━ Strategic Advisor (AI SECTION) ━━━━━━━━━━━━━━━━━━ */}
           <motion.div 
             className="mt-8 p-6 bg-card border border-border rounded-3xl text-left max-w-2xl mx-auto shadow-sm"
             initial={{ opacity: 0, y: 10 }}
@@ -217,7 +218,7 @@ export default function Home() {
   );
 }
 
-// ── Subcomponents (Keep exactly as they were) ─────────────────────────
+// ── Subcomponents ─────────────────────────
 
 function ToolCard({ meta, config, result, i, onUpdate }: { meta: ToolMeta; config: ToolConfig; result: any; i: number; onUpdate: (i: number, p: Partial<ToolConfig>) => void }) {
   const plans = getPlansForTool(meta.name);
