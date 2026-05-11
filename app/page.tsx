@@ -1,9 +1,11 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateSavings, getPlansForTool } from "../src/lib/audit/auditEngine";
+
+const SPRING_SOFT = { type: "spring" as const, stiffness: 300, damping: 24 };
 
 const TOOLS = [
   { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 0 },
@@ -57,7 +59,7 @@ export default function Home() {
       const text = await res.text();
       setAiResponse(text);
     } catch (err) {
-      setAiResponse("⚠️ Check your Vercel Environment Variables for the API key.");
+      setAiResponse("⚠️ Deployment Error: Check Vercel Environment Variables.");
     } finally {
       setIsAiLoading(false);
     }
@@ -72,72 +74,98 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans">
-      <nav className="p-6 border-b bg-white">
-        <div className="max-w-6xl mx-auto flex items-center gap-2 font-bold text-xl tracking-tighter">
-          <div className="bg-blue-600 text-white w-8 h-8 rounded flex items-center justify-center">C</div>
-          CREDEX AUDIT
-        </div>
-      </nav>
-
-      <main className="max-w-6xl mx-auto p-6 md:p-12">
-        <div className="mb-12">
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.8]">
-            AI Spend <span className="text-blue-600">Optimized.</span>
-          </h1>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white p-10 rounded-[3rem] border border-slate-200 shadow-2xl items-center">
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Savings</p>
-              <p className="text-6xl font-black text-green-500 tracking-tighter">${totals.savings}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Current Budget</p>
-              <p className="text-4xl font-bold tracking-tight">${totals.current}</p>
-            </div>
-            <button 
-              onClick={handleGetAdvice}
-              disabled={isAiLoading || totals.savings === 0}
-              className="bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-blue-600 transition-all disabled:opacity-20 active:scale-95 shadow-xl uppercase tracking-tight"
-            >
-              {isAiLoading ? "Analyzing..." : "Generate AI Report"}
-            </button>
+    <div className="min-h-screen bg-slate-950 text-white p-6 font-sans selection:bg-blue-500/30">
+      <main className="max-w-4xl mx-auto">
+        <header className="text-center mb-12">
+          <h1 className="text-3xl font-black tracking-tighter mb-4 text-slate-100 uppercase">Credex AI Auditor</h1>
+          <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
+             <p className="text-xs uppercase font-bold text-slate-500 mb-2 tracking-widest">Monthly Potential Savings</p>
+             <p className="text-6xl font-mono text-green-400 font-bold tracking-tight">${totals.savings.toLocaleString()}</p>
+             <p className="text-sm text-slate-400 mt-2">Current Spend: ${totals.current.toLocaleString()}</p>
+             
+             <button 
+                onClick={handleGetAdvice}
+                disabled={isAiLoading || totals.savings === 0}
+                className="mt-8 bg-white text-black px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform disabled:opacity-30 disabled:hover:scale-100 shadow-lg"
+             >
+               {isAiLoading ? "Consulting AI..." : "Get Strategic Summary"}
+             </button>
           </div>
-
+          
           <AnimatePresence>
             {aiResponse && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 p-10 bg-blue-50 border border-blue-100 rounded-[2.5rem] text-blue-900 font-semibold text-lg leading-relaxed shadow-inner">
-                {aiResponse}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }} 
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-left"
+              >
+                <p className="text-blue-300 italic text-sm leading-relaxed">
+                  {aiResponse}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {TOOLS.map((t, i) => (
-            <div key={t.name} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-lg flex flex-col justify-between hover:shadow-2xl transition-all">
-              <div className="mb-6 flex justify-between items-start">
-                <h3 className="font-black text-2xl tracking-tight uppercase">{t.name}</h3>
-                <span className="text-slate-300 font-black font-mono">
-                  {t.name === "Gemini" ? `₹${results[i].currentSpend}` : `$${results[i].currentSpend}`}
-                </span>
-              </div>
-              <div className="space-y-4">
-                <select 
-                  value={configs[i].plan} 
-                  onChange={e => update(i, { plan: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 font-bold text-sm outline-none cursor-pointer"
-                >
-                  {getPlansForTool(t.name).map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} className="w-12 h-12 bg-slate-100 rounded-xl font-bold hover:bg-slate-200 transition-colors">-</button>
-                  <span className="flex-1 text-center font-black text-xl">{configs[i].seats}</span>
-                  <button onClick={() => update(i, { seats: configs[i].seats + 1 })} className="w-12 h-12 bg-slate-100 rounded-xl font-bold hover:bg-slate-200 transition-colors">+</button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {TOOLS.map((t, i) => {
+            const r = results[i];
+            const plans = getPlansForTool(t.name);
+            const isGemini = t.name === "Gemini";
+            
+            return (
+              <div key={t.name} className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-colors">
+                <div className="mb-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold text-lg text-slate-200">{t.name}</h3>
+                    <p className="font-mono text-slate-400 font-bold">
+                      {isGemini ? "₹" : "$"}{r.currentSpend}
+                    </p>
+                  </div>
+
+                  {/* RESTORED WARNINGS */}
+                  {r.warning && (
+                    <div className="mb-4 bg-red-900/20 text-red-400 border border-red-900/30 text-[10px] px-2 py-1 rounded-md font-bold uppercase tracking-tighter">
+                      ⚠️ {r.warning}
+                    </div>
+                  )}
+
+                  <div className="space-y-3 mt-4">
+                    <div className="flex justify-between items-center bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                      <p className="text-[10px] text-slate-500 uppercase font-black">Plan</p>
+                      <select 
+                        value={configs[i].plan}
+                        onChange={(e) => update(i, { plan: e.target.value })}
+                        className="bg-transparent text-xs text-slate-200 font-bold outline-none cursor-pointer"
+                      >
+                        {plans.map(p => <option key={p} value={p} className="bg-slate-900">{p}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex justify-between items-center bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                      <p className="text-[10px] text-slate-500 uppercase font-black">Seats</p>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} className="text-slate-400 hover:text-white font-bold">-</button>
+                        <span className="text-xs font-mono font-bold text-slate-200">{configs[i].seats}</span>
+                        <button onClick={() => update(i, { seats: configs[i].seats + 1 })} className="text-slate-400 hover:text-white font-bold">+</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+
+                {/* RESTORED OPTIMIZATION BREAKDOWN */}
+                {r.totalSavings > 0 && (
+                   <div className="mt-4 pt-4 border-t border-slate-800">
+                      <p className="text-[10px] text-green-400 font-black uppercase tracking-widest">Optimized: Save {isGemini ? "₹" : "$"}{r.totalSavings}</p>
+                      {r.breakdown?.map((b, idx) => (
+                        <p key={idx} className="text-[9px] text-slate-500 mt-1">
+                          {b.type === "ghost_seats" ? "• Remove ghost seats" : "• Switch to annual"}
+                        </p>
+                      ))}
+                   </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
     </div>
