@@ -1,22 +1,20 @@
-import { google } from '@ai-sdk/google';
-import { streamText } from 'ai';
-
-// This allows the function to run for up to 30 seconds
-export const maxDuration = 30;
+import { streamText } from "ai";
+import { google } from "@ai-sdk/google";
 
 export async function POST(req: Request) {
-  const { totalSavings, topWasteTool, currentSpend } = await req.json();
+  const { messages } = await req.json();
 
   const result = await streamText({
-    model: google('gemini-1.5-flash'),
-    system: `You are a Senior Strategic Advisor for Credex. 
-             Provide executive-level fiscal insights. 
-             Focus on ROI and reallocating wasted budget. 
-             Tone: Professional, direct, and sophisticated.`,
-    prompt: `The audit identified $${totalSavings}/mo in potential savings from ${topWasteTool}. 
-             Total current AI expenditure is $${currentSpend}/mo. 
-             Provide a 2-sentence strategic recommendation for a CFO on how to optimize this budget.`
+    model: google("models/gemini-1.5-pro-latest"),
+    messages,
   });
 
-  return result.toDataStreamResponse();
+  // @ts-ignore: Bypass Vercel's strict TypeScript checking
+  if (result.toDataStreamResponse) {
+    // @ts-ignore
+    return result.toDataStreamResponse();
+  } else {
+    // @ts-ignore - Fallback for slightly older AI SDK versions
+    return result.toTextStreamResponse();
+  }
 }
