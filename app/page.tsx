@@ -1,11 +1,9 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { calculateSavings, getPlansForTool } from "../src/lib/audit/auditEngine";
-
-const SPRING_SOFT = { type: "spring" as const, stiffness: 300, damping: 24 };
 
 const TOOLS = [
   { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 0 },
@@ -18,16 +16,20 @@ const TOOLS = [
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const [configs, setConfigs] = useState(TOOLS.map((t) => ({ plan: t.defaultPlan, seats: t.defaultSeats })));
+  const [configs, setConfigs] = useState(TOOLS.map(t => ({ plan: t.defaultPlan, seats: t.defaultSeats })));
   const [aiResponse, setAiResponse] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
 
-  const results = useMemo(() => TOOLS.map((t, i) => {
-    try {
-      return calculateSavings(t.name, configs[i].seats, configs[i].plan, "monthly");
-    } catch (e) {
-      return { currentSpend: 0, totalSavings: 0, breakdown: [], warning: "Error" };
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem("auditConfigs_v3");
+    if (saved) {
+      try { setConfigs(JSON.parse(saved)); } catch (e) { console.error("Cache clear"); }
     }
+  }, []);
+
+  const results = useMemo(() => TOOLS.map((t, i) => {
+    return calculateSavings(t.name, configs[i].seats, configs[i].plan, "monthly");
   }), [configs]);
 
   const totals = useMemo(() => {
@@ -39,129 +41,114 @@ export default function Home() {
   const handleGetAdvice = async () => {
     setIsAiLoading(true);
     setAiResponse("");
-
-    const topWaste = [...results].sort((a, b) => b.totalSavings - a.totalSavings)[0];
-    const prompt = `Analyze my AI spend audit. I can save $${totals.savings} per month. My current spend is $${totals.current}. The biggest waste is from ${topWaste?.toolName || "General"}. Give me a 3-sentence executive summary.`;
-
+    const topTool = [...results].sort((a,b) => b.totalSavings - a.totalSavings)[0];
+    
     try {
-      const response = await fetch("/api/chat", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({ 
+          messages: [{ 
+            role: "user", 
+            content: `Audit: Saving $${totals.savings} on $${totals.current} spend. Main waste: ${topTool.toolName}. 3 sentence summary.` 
+          }] 
+        }),
       });
 
-      if (!response.ok) throw new Error("API Connection Failed");
+      if (!res.ok) throw new Error();
 
-      // Simplified: Just get the full text back
-      const rawText = await response.text();
-      // Cleans up the Vercel stream markers if they exist
-      const cleanText = rawText.replace(/[0-9]:"([^"]+)"/g, "$1").replace(/\\n/g, " ");
-      setAiResponse(cleanText.trim());
-      
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        // Clean Vercel stream markers (0:"...")
+        const cleanChunk = chunk.replace(/[0-9]:"([^"]+)"/g, "$1").replace(/\\n/g, "\n").replace(/"/g, "");
+        setAiResponse(prev => prev + cleanChunk);
+      }
     } catch (err) {
-      setAiResponse("⚠️ Analysis failed. Ensure your Gemini API Key is set in Vercel.");
+      setAiResponse("⚠️ Connection error. Please check your API key in Vercel.");
     } finally {
       setIsAiLoading(false);
     }
   };
 
-  useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem("auditConfigs_v3");
-    if (saved) try { setConfigs(JSON.parse(saved)); } catch (e) {}
-  }, []);
-
   const update = (i, patch) => {
-    setConfigs((prev) => {
-      const next = prev.map((c, j) => (j === i ? { ...c, ...patch } : c));
-      localStorage.setItem("auditConfigs_v3", JSON.stringify(next));
-      return next;
-    });
+    const next = configs.map((c, j) => j === i ? { ...c, ...patch } : c);
+    setConfigs(next);
+    localStorage.setItem("auditConfigs_v3", JSON.stringify(next));
   };
 
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans">
-      <nav className="px-10 py-6 border-b border-gray-100 bg-white">
-        <div className="flex items-center gap-2 font-bold text-xl tracking-tighter max-w-6xl mx-auto">
-           <div className="w-8 h-8 bg-black rounded flex items-center justify-center text-white">$</div>
-           Credex Audit
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <nav className="p-6 border-b bg-white shadow-sm">
+        <div className="max-w-6xl mx-auto flex items-center gap-2 font-bold text-xl uppercase tracking-tighter">
+          <div className="bg-blue-600 text-white w-8 h-8 rounded flex items-center justify-center italic">C</div>
+          Credex Audit
         </div>
       </nav>
 
-      <main className="px-6 lg:px-10 pb-24 pt-12 max-w-6xl mx-auto">
-        <header className="mb-16">
-          <h1 className="text-6xl font-black tracking-tighter mb-8 leading-tight">
-            SaaS bloat <span className="text-blue-600 italic">eliminated.</span>
+      <main className="max-w-6xl mx-auto p-6 md:p-12">
+        <div className="mb-12">
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-8 leading-[0.9]">
+            AI Spend <span className="text-blue-600">Optimized.</span>
           </h1>
           
-          <div className="flex flex-col md:flex-row gap-8 bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-xl items-center">
-            <div className="flex-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Potential Savings</p>
-              <p className="text-6xl font-black text-green-500 tracking-tighter">${totals.savings}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white p-8 rounded-[2rem] border shadow-xl items-center">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Savings</p>
+              <p className="text-5xl font-black text-green-500 tracking-tighter">${totals.savings}</p>
             </div>
-            <div className="flex-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Current Spend</p>
-              <p className="text-4xl font-bold tracking-tight text-gray-900">${totals.current}</p>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Current Budget</p>
+              <p className="text-3xl font-bold tracking-tight">${totals.current}</p>
             </div>
             <button 
               onClick={handleGetAdvice}
               disabled={isAiLoading || totals.savings === 0}
-              className="bg-black text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-gray-800 transition-all disabled:opacity-20 active:scale-95"
+              className="bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-blue-600 transition-all disabled:opacity-20 shadow-lg"
             >
-              {isAiLoading ? "Analyzing..." : "Get AI Report"}
+              {isAiLoading ? "Analyzing..." : "Generate AI Report"}
             </button>
           </div>
 
           <AnimatePresence>
             {aiResponse && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-8 p-8 bg-blue-50 border border-blue-100 rounded-[2rem] text-blue-900 font-medium leading-relaxed shadow-inner">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 p-6 bg-blue-50 border border-blue-100 rounded-2xl text-blue-800 font-medium leading-relaxed">
                 {aiResponse}
               </motion.div>
             )}
           </AnimatePresence>
-        </header>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {TOOLS.map((meta, i) => (
-            <ToolCard key={meta.name} meta={meta} config={configs[i]} result={results[i]} onUpdate={(patch) => update(i, patch)} />
+          {TOOLS.map((t, i) => (
+            <div key={t.name} className="bg-white p-8 rounded-[2rem] border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div className="mb-6 flex justify-between items-start">
+                <h3 className="font-bold text-xl">{t.name}</h3>
+                <span className="text-slate-400 font-bold">${results[i].currentSpend}</span>
+              </div>
+              <div className="space-y-4">
+                <select 
+                  value={configs[i].plan} 
+                  onChange={e => update(i, { plan: e.target.value })}
+                  className="w-full bg-slate-50 border-none rounded-xl p-3 font-bold text-sm outline-none"
+                >
+                  {getPlansForTool(t.name).map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} className="w-10 h-10 bg-slate-100 rounded-lg font-bold hover:bg-slate-200">-</button>
+                  <span className="flex-1 text-center font-black">{configs[i].seats}</span>
+                  <button onClick={() => update(i, { seats: configs[i].seats + 1 })} className="w-10 h-10 bg-slate-100 rounded-lg font-bold hover:bg-slate-200">+</button>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </main>
-    </div>
-  );
-}
-
-function ToolCard({ meta, config, result, onUpdate }) {
-  const plans = getPlansForTool(meta.name);
-  return (
-    <div className="bg-white border border-gray-100 p-8 rounded-[2rem] shadow-sm hover:shadow-lg transition-all">
-      <div className="flex justify-between items-start mb-6">
-        <h3 className="text-xl font-bold tracking-tight">{meta.name}</h3>
-        <span className="font-bold text-gray-400 font-mono">${result.currentSpend}</span>
-      </div>
-      
-      <div className="space-y-4">
-        <div>
-          <label className="text-[10px] font-black uppercase text-gray-400 block mb-2 tracking-widest">Plan Tier</label>
-          <select 
-            value={config.plan} 
-            onChange={(e) => onUpdate({ plan: e.target.value })}
-            className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-bold text-sm outline-none cursor-pointer"
-          >
-            {plans.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="text-[10px] font-black uppercase text-gray-400 block mb-2 tracking-widest">Seats</label>
-          <div className="flex items-center gap-3">
-            <button onClick={() => onUpdate({ seats: Math.max(0, config.seats - 1) })} className="w-12 h-12 bg-gray-100 rounded-xl font-bold hover:bg-gray-200 transition-colors">-</button>
-            <div className="flex-1 text-center font-black text-lg">{config.seats}</div>
-            <button onClick={() => onUpdate({ seats: config.seats + 1 })} className="w-12 h-12 bg-gray-100 rounded-xl font-bold hover:bg-gray-200 transition-colors">+</button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
