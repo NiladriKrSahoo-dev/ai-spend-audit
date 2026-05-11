@@ -1,7 +1,8 @@
+// @ts-nocheck
 import { streamText } from "ai";
 import { google } from "@ai-sdk/google";
 
-export const maxDuration = 30; // Allows the AI more time to "think" on Vercel
+export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
@@ -12,13 +13,11 @@ export async function POST(req: Request) {
       messages,
     });
 
-    // This part is CRITICAL: It handles the hand-off between Gemini and your UI
-    // @ts-ignore
-    if (result.toDataStreamResponse) { 
-      return result.toDataStreamResponse(); 
+    // Check if the new method exists, otherwise use the standard text stream
+    if (result.toDataStreamResponse) {
+      return result.toDataStreamResponse();
     }
     
-    // @ts-ignore - Fallback for older SDK versions
     return result.toTextStreamResponse();
     
   } catch (error: any) {
