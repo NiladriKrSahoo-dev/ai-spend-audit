@@ -9,9 +9,9 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
     const prompt = messages[messages.length - 1].content;
 
-    // We'll use the most stable model name string
+    // Fixed model string to avoid the v1beta error
     const { text } = await generateText({
-      model: google("gemini-1.5-pro"),
+      model: google("gemini-1.5-flash"), 
       prompt: prompt,
     });
 
@@ -19,7 +19,6 @@ export async function POST(req: Request) {
     
   } catch (error: any) {
     console.error("DEBUG - AI Backend Error:", error);
-    // If this shows up, your GOOGLE_GENERATIVE_AI_API_KEY is missing or invalid in Vercel
     return new Response(`Error: ${error.message || "API Key issue"}`, { status: 500 });
   }
 }
