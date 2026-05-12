@@ -5,21 +5,22 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateSavings, getPlansForTool } from "../src/lib/audit/auditEngine";
 
-// PRE-LOADED DATA: Makes the dashboard look alive instantly
+// REALISTIC DEFAULT DATA: Sets the stage for a compelling initial graph
 const TOOLS = [
   { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 12 },
   { name: "ChatGPT",        defaultPlan: "Business", defaultSeats: 45 },
   { name: "Claude",         defaultPlan: "Team",     defaultSeats: 8  },
   { name: "GitHub Copilot", defaultPlan: "Business", defaultSeats: 30 },
-  { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 5  },
-  { name: "V0.dev",         defaultPlan: "Team",     defaultSeats: 0  },
+  { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 1  }, // Fixed: Single user plan default
+  { name: "V0.dev",         defaultPlan: "Team",     defaultSeats: 5  },
 ];
 
+// DYNAMIC PLAN CONTEXT: Explains the billing structure instantly
 const getPlanContext = (planName) => {
   const p = planName.toLowerCase();
-  if (p.includes("free")) return "Limited features";
-  if (p.includes("teams") || p.includes("business") || p.includes("team")) return "Usually billed annually";
-  if (p.includes("pro") || p.includes("plus")) return "Standard monthly billing";
+  if (p.includes("free") || p.includes("hobby")) return "Free Tier";
+  if (p === "pro" || p === "plus" || p === "individual" || p === "go" || p === "premium" || p === "ultra") return "Single User Plan";
+  if (p.includes("team") || p.includes("business") || p.includes("enterprise")) return "Multi-Seat Plan";
   return "Standard tier";
 };
 
@@ -34,7 +35,8 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem("auditConfigs_v4");
+    // Bumping to v5 to clear out any old broken local data
+    const saved = localStorage.getItem("auditConfigs_v5");
     if (saved) {
       try { setConfigs(JSON.parse(saved)); } catch (e) {}
     } else {
@@ -81,15 +83,41 @@ export default function Home() {
     }
   };
 
+  // 🚀 THE PRODUCTION LOGIC FIX: Enforces strict seat rules and minimums
   const update = (i, patch) => {
-    const next = configs.map((c, j) => j === i ? { ...c, ...patch } : c);
-    setConfigs(next);
-    localStorage.setItem("auditConfigs_v4", JSON.stringify(next));
+    let nextConfigs = [...configs];
+    let toolConfig = { ...nextConfigs[i], ...patch };
+    const toolName = TOOLS[i].name;
+
+    const singleSeatPlans = ["Hobby", "Free", "Pro", "Individual", "Plus", "Go", "Premium", "Ultra"];
+
+    // RULE 1: If switching to a single-user plan, hard cap seats at 1
+    if (singleSeatPlans.includes(toolConfig.plan)) {
+      if (toolConfig.seats > 1) toolConfig.seats = 1;
+    }
+
+    // RULE 2: Enforce SaaS Plan Minimums (e.g., Claude Team requires 5)
+    if (patch.seats !== undefined) {
+      if (toolName === "Claude" && toolConfig.plan === "Team") {
+         // If dropping below minimum 5, jump straight to 0 (canceled)
+         if (configs[i].seats === 5 && patch.seats === 4) toolConfig.seats = 0;
+         else if (patch.seats > 0 && patch.seats < 5) toolConfig.seats = 5;
+      }
+      if (toolName === "ChatGPT" && toolConfig.plan === "Business") {
+         // Minimum 2
+         if (configs[i].seats === 2 && patch.seats === 1) toolConfig.seats = 0;
+         else if (patch.seats > 0 && patch.seats < 2) toolConfig.seats = 2;
+      }
+    }
+
+    nextConfigs[i] = toolConfig;
+    setConfigs(nextConfigs);
+    localStorage.setItem("auditConfigs_v5", JSON.stringify(nextConfigs));
   };
 
   const closeTour = () => {
     setShowTour(false);
-    localStorage.setItem("auditConfigs_v4", JSON.stringify(configs)); // Save the pre-loaded data
+    localStorage.setItem("auditConfigs_v5", JSON.stringify(configs));
   };
 
   if (!mounted) return null;
@@ -97,35 +125,33 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#F7F7F5] text-[#111111] font-sans selection:bg-black selection:text-white pb-20">
       
-      {/* NATIVE ONBOARDING MODAL */}
+      {/* THE TOUR MODAL */}
       <AnimatePresence>
         {showTour && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#111111]/40 backdrop-blur-sm p-4">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="bg-white rounded-[24px] shadow-2xl p-10 max-w-md w-full relative border border-[#E5E5E5]"
             >
               {tourStep === 1 && (
                 <div>
                   <div className="w-12 h-12 bg-[#F0F0F0] rounded-full flex items-center justify-center mb-6">👋</div>
                   <h2 className="text-2xl font-bold mb-3 tracking-tight">Welcome to StackTrim</h2>
-                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">This tool audits your company's AI subscriptions to find wasted spend, ghost seats, and unoptimized billing plans.</p>
+                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">This tool audits your company's AI subscriptions using verified 2026 pricing to find wasted spend and ghost seats.</p>
                 </div>
               )}
               {tourStep === 2 && (
                 <div>
                   <div className="w-12 h-12 bg-[#F0F0F0] rounded-full flex items-center justify-center mb-6">⚙️</div>
-                  <h2 className="text-2xl font-bold mb-3 tracking-tight">Adjust Your Stack</h2>
-                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">Scroll down to the "Active Subscriptions" area. Add your team's real seat count and select their current plan tiers to see live savings.</p>
+                  <h2 className="text-2xl font-bold mb-3 tracking-tight">Smart Tier Logic</h2>
+                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">Our UI enforces real-world constraints. Try adding 10 seats to a "Free" tier, or watch it enforce Claude's 5-seat Team minimum automatically.</p>
                 </div>
               )}
               {tourStep === 3 && (
                 <div>
                   <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">✨</div>
                   <h2 className="text-2xl font-bold mb-3 tracking-tight">Get AI Insights</h2>
-                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">Once your data is in, click the black <b>Generate AI Report</b> button. Our engine will formulate a strategic summary to present to your CFO.</p>
+                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">Once your stack is dialed in, click the black <b>Generate AI Report</b> button. Our engine will formulate a strategic summary for your CFO.</p>
                 </div>
               )}
 
@@ -214,8 +240,7 @@ export default function Home() {
           <AnimatePresence>
             {aiResponse && (
               <motion.div 
-                initial={{ opacity: 0, y: -10 }} 
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                 className="mt-6 p-8 bg-white border border-[#E5E5E5] rounded-[24px] text-left shadow-sm flex gap-6"
               >
                 <div className="w-10 h-10 rounded-full bg-[#F0F0F0] flex items-center justify-center flex-shrink-0">
@@ -263,16 +288,15 @@ export default function Home() {
                     <div className="border-b border-[#F0F0F0] pb-3">
                       <div className="flex justify-between items-center mb-1">
                         <p className="text-[12px] text-[#888888] font-medium">Plan Tier</p>
-                        <div className="relative flex items-center">
-                          <select 
-                            value={configs[i].plan}
-                            onChange={(e) => update(i, { plan: e.target.value })}
-                            className="bg-transparent text-[13px] text-[#111111] font-semibold outline-none cursor-pointer text-right appearance-none pr-5 z-10 w-full"
-                          >
-                            {plans.map(p => <option key={p} value={p}>{p}</option>)}
-                          </select>
-                          <svg className="w-3.5 h-3.5 text-[#AAAAAA] absolute right-0 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
+                        
+                        {/* 🚀 SAFARI FIX: Clean native select. No custom overlapping SVG. */}
+                        <select 
+                          value={configs[i].plan}
+                          onChange={(e) => update(i, { plan: e.target.value })}
+                          className="bg-transparent text-[13px] text-[#111111] font-semibold outline-none cursor-pointer text-right min-w-[100px]"
+                        >
+                          {plans.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
                       </div>
                       <p className="text-[9px] text-[#AAAAAA] text-right uppercase tracking-wider font-semibold">{planContext}</p>
                     </div>
@@ -295,7 +319,6 @@ export default function Home() {
                         <span className="text-emerald-600 font-bold text-[14px]">+{isGemini ? "₹" : "$"}{r.totalSavings}</span>
                       </div>
                       
-                      {/* RESTORED AGGRESSIVE BREAKDOWN TEXT */}
                       {r.breakdown?.map((b, idx) => (
                          <p key={idx} className="text-[11px] text-[#D92D20] font-bold flex items-center gap-1.5 mt-1 bg-[#FFF4F4] px-2 py-1 rounded">
                            <span className="w-1 h-1 bg-[#D92D20] rounded-full" />
