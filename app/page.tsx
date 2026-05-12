@@ -5,17 +5,15 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateSavings, getPlansForTool } from "../src/lib/audit/auditEngine";
 
-// REALISTIC DEFAULT DATA: Sets the stage for a compelling initial graph
 const TOOLS = [
   { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 12 },
   { name: "ChatGPT",        defaultPlan: "Business", defaultSeats: 45 },
   { name: "Claude",         defaultPlan: "Team",     defaultSeats: 8  },
   { name: "GitHub Copilot", defaultPlan: "Business", defaultSeats: 30 },
-  { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 1  }, // Fixed: Single user plan default
+  { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 1  }, 
   { name: "V0.dev",         defaultPlan: "Team",     defaultSeats: 5  },
 ];
 
-// DYNAMIC PLAN CONTEXT: Explains the billing structure instantly
 const getPlanContext = (planName) => {
   const p = planName.toLowerCase();
   if (p.includes("free") || p.includes("hobby")) return "Free Tier";
@@ -30,13 +28,15 @@ export default function Home() {
   const [aiResponse, setAiResponse] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   
+  // Modals and Animations
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(1);
+  const [shakeIndex, setShakeIndex] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: "" });
 
   useEffect(() => {
     setMounted(true);
-    // Bumping to v5 to clear out any old broken local data
-    const saved = localStorage.getItem("auditConfigs_v5");
+    const saved = localStorage.getItem("auditConfigs_v6");
     if (saved) {
       try { setConfigs(JSON.parse(saved)); } catch (e) {}
     } else {
@@ -58,32 +58,42 @@ export default function Home() {
   const optimizedPercent = totals.current > 0 ? (optimizedSpend / totals.current) * 100 : 0;
   const wastedPercent = totals.current > 0 ? (totals.savings / totals.current) * 100 : 0;
 
+  // 🚀 INTELLIGENT AI PROMPT COMPILER
   const handleGetAdvice = async () => {
     setIsAiLoading(true);
     setAiResponse("");
-    const topTool = [...results].sort((a,b) => b.totalSavings - a.totalSavings)[0];
     
+    // Build a specific string of exactly WHERE the money is bleeding
+    const wasteDetails = results
+      .filter(r => r.totalSavings > 0)
+      .map(r => {
+        const reasons = r.breakdown.map(b => b.type === "ghost_seats" ? "unused inactive seats" : "suboptimal billing tier").join(" and ");
+        return `${r.toolName} (Bleeding $${r.totalSavings}/mo due to ${reasons})`;
+      }).join("; ");
+
+    const smartPrompt = `Act as a ruthless financial auditor. The company is currently spending $${totals.current}/mo on AI SaaS, but $${totals.savings}/mo is completely wasted.
+    Here is the exact breakdown of the waste: ${wasteDetails || 'No waste detected.'}.
+    Write a sharp, 3-sentence executive summary telling the CFO exactly where the largest leaks are and the immediate action required to stop it. Do NOT just repeat the total numbers back to me—give actionable strategic advice based on the tool names provided.`;
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        body: JSON.stringify({ 
-          messages: [{ 
-            role: "user", 
-            content: `Analyze this AI audit. Saving $${totals.savings} on $${totals.current} spend. Main waste: ${topTool?.toolName || 'General'}. Write a 3-sentence summary.` 
-          }] 
-        }),
+        body: JSON.stringify({ messages: [{ role: "user", content: smartPrompt }] }),
       });
-
       const text = await res.text();
       setAiResponse(text);
     } catch (err) {
-      setAiResponse("⚠️ Error: Could not connect to the engine.");
+      setAiResponse("⚠️ Error: Could not connect to the AI auditor engine.");
     } finally {
       setIsAiLoading(false);
     }
   };
 
-  // 🚀 THE PRODUCTION LOGIC FIX: Enforces strict seat rules and minimums
+  const triggerToast = (message) => {
+    setToast({ show: true, message });
+    setTimeout(() => setToast({ show: false, message: "" }), 3000);
+  };
+
   const update = (i, patch) => {
     let nextConfigs = [...configs];
     let toolConfig = { ...nextConfigs[i], ...patch };
@@ -91,20 +101,28 @@ export default function Home() {
 
     const singleSeatPlans = ["Hobby", "Free", "Pro", "Individual", "Plus", "Go", "Premium", "Ultra"];
 
-    // RULE 1: If switching to a single-user plan, hard cap seats at 1
-    if (singleSeatPlans.includes(toolConfig.plan)) {
+    // 🚀 SHAKE & TOAST LOGIC: If clicking "+" on a single user plan
+    if (patch.seats !== undefined && patch.seats > configs[i].seats) {
+       if (singleSeatPlans.includes(configs[i].plan)) {
+          setShakeIndex(i);
+          triggerToast(`The ${configs[i].plan} tier is a single-user plan. Limited to 1 seat.`);
+          setTimeout(() => setShakeIndex(null), 500);
+          return; // Abort the update
+       }
+    }
+
+    // If changing dropdown TO a single user plan, auto-snap to 1
+    if (patch.plan !== undefined && singleSeatPlans.includes(patch.plan)) {
       if (toolConfig.seats > 1) toolConfig.seats = 1;
     }
 
-    // RULE 2: Enforce SaaS Plan Minimums (e.g., Claude Team requires 5)
+    // Enforce SaaS Minimums
     if (patch.seats !== undefined) {
       if (toolName === "Claude" && toolConfig.plan === "Team") {
-         // If dropping below minimum 5, jump straight to 0 (canceled)
          if (configs[i].seats === 5 && patch.seats === 4) toolConfig.seats = 0;
          else if (patch.seats > 0 && patch.seats < 5) toolConfig.seats = 5;
       }
       if (toolName === "ChatGPT" && toolConfig.plan === "Business") {
-         // Minimum 2
          if (configs[i].seats === 2 && patch.seats === 1) toolConfig.seats = 0;
          else if (patch.seats > 0 && patch.seats < 2) toolConfig.seats = 2;
       }
@@ -112,20 +130,33 @@ export default function Home() {
 
     nextConfigs[i] = toolConfig;
     setConfigs(nextConfigs);
-    localStorage.setItem("auditConfigs_v5", JSON.stringify(nextConfigs));
+    localStorage.setItem("auditConfigs_v6", JSON.stringify(nextConfigs));
   };
 
   const closeTour = () => {
     setShowTour(false);
-    localStorage.setItem("auditConfigs_v5", JSON.stringify(configs));
+    localStorage.setItem("auditConfigs_v6", JSON.stringify(configs));
   };
 
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#F7F7F5] text-[#111111] font-sans selection:bg-black selection:text-white pb-20">
+    <div className="min-h-screen bg-[#F7F7F5] text-[#111111] font-sans selection:bg-black selection:text-white pb-20 relative">
       
-      {/* THE TOUR MODAL */}
+      {/* 🚀 AESTHETIC TOAST NOTIFICATION */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#111111] text-white px-6 py-3.5 rounded-full shadow-2xl z-[200] flex items-center gap-3 font-semibold text-[13px] border border-[#333333]"
+          >
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* TOUR MODAL */}
       <AnimatePresence>
         {showTour && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#111111]/40 backdrop-blur-sm p-4">
@@ -144,7 +175,7 @@ export default function Home() {
                 <div>
                   <div className="w-12 h-12 bg-[#F0F0F0] rounded-full flex items-center justify-center mb-6">⚙️</div>
                   <h2 className="text-2xl font-bold mb-3 tracking-tight">Smart Tier Logic</h2>
-                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">Our UI enforces real-world constraints. Try adding 10 seats to a "Free" tier, or watch it enforce Claude's 5-seat Team minimum automatically.</p>
+                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">Our UI enforces real-world constraints. Try adding multiple seats to a single-user plan like "ChatGPT Pro" to see our error handling.</p>
                 </div>
               )}
               {tourStep === 3 && (
@@ -268,7 +299,12 @@ export default function Home() {
             const planContext = getPlanContext(configs[i].plan);
             
             return (
-              <div key={t.name} className="bg-white p-6 rounded-[20px] border border-[#E5E5E5] hover:shadow-md transition-shadow flex flex-col justify-between group">
+              <motion.div 
+                key={t.name} 
+                animate={shakeIndex === i ? { x: [-8, 8, -8, 8, 0] } : {}}
+                transition={{ duration: 0.4 }}
+                className="bg-white p-6 rounded-[20px] border border-[#E5E5E5] hover:shadow-md transition-shadow flex flex-col justify-between group"
+              >
                 <div className="mb-4">
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="font-bold text-[17px] text-[#111111] tracking-tight">{t.name}</h3>
@@ -284,12 +320,10 @@ export default function Home() {
                     </div>
                   )}
 
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div className="border-b border-[#F0F0F0] pb-3">
                       <div className="flex justify-between items-center mb-1">
                         <p className="text-[12px] text-[#888888] font-medium">Plan Tier</p>
-                        
-                        {/* 🚀 SAFARI FIX: Clean native select. No custom overlapping SVG. */}
                         <select 
                           value={configs[i].plan}
                           onChange={(e) => update(i, { plan: e.target.value })}
@@ -301,12 +335,17 @@ export default function Home() {
                       <p className="text-[9px] text-[#AAAAAA] text-right uppercase tracking-wider font-semibold">{planContext}</p>
                     </div>
                     
+                    {/* 🚀 BIG, SEPARATED TACTILE BUTTONS */}
                     <div className="flex justify-between items-center pt-1">
                       <p className="text-[12px] text-[#888888] font-medium">Allocated Seats</p>
-                      <div className="flex items-center gap-3 bg-[#F9F9F9] px-2 py-1 rounded-lg border border-[#E5E5E5]">
-                        <button onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} className="w-6 h-6 flex items-center justify-center text-[#666666] hover:text-[#111111] rounded font-medium text-lg transition-colors">−</button>
-                        <span className="w-6 text-center font-semibold text-[#111111] text-[14px]">{configs[i].seats}</span>
-                        <button onClick={() => update(i, { seats: configs[i].seats + 1 })} className="w-6 h-6 flex items-center justify-center text-[#666666] hover:text-[#111111] rounded font-medium text-lg transition-colors">+</button>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} className="w-10 h-10 flex items-center justify-center text-[#666666] bg-white border border-[#E5E5E5] hover:border-[#111111] hover:text-[#111111] rounded-xl font-medium text-xl transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#E5E5E5]">
+                          −
+                        </button>
+                        <span className="w-6 text-center font-bold text-[#111111] text-[16px]">{configs[i].seats}</span>
+                        <button onClick={() => update(i, { seats: configs[i].seats + 1 })} className="w-10 h-10 flex items-center justify-center text-[#666666] bg-white border border-[#E5E5E5] hover:border-[#111111] hover:text-[#111111] rounded-xl font-medium text-xl transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#E5E5E5]">
+                          +
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -327,7 +366,7 @@ export default function Home() {
                       ))}
                    </div>
                 )}
-              </div>
+              </motion.div>
             );
           })}
         </div>
