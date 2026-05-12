@@ -1,19 +1,25 @@
 import { Redis } from '@upstash/redis';
 
-// Initialize Redis explicitly using the Vercel KV environment variables
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { email, aiResponse, totals, results } = body;
 
     if (!email || !aiResponse) {
-      return new Response("Missing required fields", { status: 400 });
+      return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400 });
     }
+
+    // Safely check for environment variables inside the function
+    const dbUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const dbToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (!dbUrl || !dbToken) {
+      console.error("CRITICAL: Upstash Database keys are missing in Vercel!");
+      return new Response(JSON.stringify({ error: "Database keys missing" }), { status: 500 });
+    }
+
+    // Initialize Redis only after confirming we have the keys
+    const redis = new Redis({ url: dbUrl, token: dbToken });
 
     // Generate a unique 7-character ID
     const shareId = Math.random().toString(36).substring(2, 9);
@@ -38,6 +44,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error("Database Error:", error);
-    return new Response(`Database Server Error: ${error.message}`, { status: 500 });
+    return new Response(JSON.stringify({ error: `Server Error: ${error.message}` }), { status: 500 });
   }
 }
