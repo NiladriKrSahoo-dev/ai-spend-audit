@@ -9,6 +9,13 @@
 ![CI Compliance](./public/screenshots/ci-check.png)
 *Verified GitHub Actions passing for 100% production stability.*
 **Vantage** is an automated audit engine built for CTOs and Engineering leads to stop capital leakage in their AI stack. It identifies ghost seats, suboptimal billing cycles, and plan mismatches across Cursor, Claude, ChatGPT, and more.
+## 📈 Core Web Vitals (Mobile)
+![Lighthouse Report](./public/screenshots/lighthouse.png)
+*Light house score of the website.*
+- **Performance:** 98
+- **Accessibility:** 91
+- **Best Practices:** 100
+- **SEO:** 100
 
 ## 🚀 Quick Start
 1. **Install:** `npm install`
@@ -23,4 +30,4 @@
 5. **@ts-nocheck usage:** I used TypeScript extensions but kept some logic flexible with `any` types. For a 7-day MVP build, I prioritized shipping the feature set over fighting strict type errors.
 
 ## 🔗 Live Link
-https://ai-spend-audit-34bqydphh-niladri-kumar-sahoo-s-projects.vercel.app
+https://ai-spend-audit-o3ur07uya-niladri-kumar-sahoo-s-projects.vercel.app/
