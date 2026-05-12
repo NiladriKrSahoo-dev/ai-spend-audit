@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -12,10 +12,40 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Setting the viewport explicitly ensures mobile-friendliness scores stay at 100
+export const viewport: Viewport = {
+  themeColor: "#F7F7F5",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: "AI Spend Audit — Optimize Your AI Tool Costs",
+  title: "Vantage | AI Subscription Audit & Savings Engine",
   description:
-    "Instantly audit your AI tool subscriptions. Find ghost seats, unlock annual savings, and cut waste across Cursor, GitHub Copilot, Claude, ChatGPT, Gemini, and V0.dev.",
+    "Instantly audit your AI tool subscriptions. Identify ghost seats, unlock annual billing savings, and eliminate waste across Cursor, Claude, ChatGPT, and more.",
+  keywords: ["AI Spend", "SaaS Audit", "Cost Optimization", "AI Subscriptions", "Cloud Waste"],
+  authors: [{ name: "Vantage Engineering" }],
+  metadataBase: new URL("https://ai-spend-audit-34bqydphh-niladri-kumar-sahoo-s-projects.vercel.app"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Vantage | AI Subscription Audit",
+    description: "Identify hidden waste in your AI SaaS spend instantly.",
+    url: "https://ai-spend-audit-34bqydphh-niladri-kumar-sahoo-s-projects.vercel.app",
+    siteName: "Vantage",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vantage | AI Subscription Audit",
+    description: "Stop capital leakage in your AI stack.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
