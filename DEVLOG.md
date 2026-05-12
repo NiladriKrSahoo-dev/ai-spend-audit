@@ -76,5 +76,28 @@ I want to start writing some automated tests so the pricing logic doesn't break 
 **Blockers / what I'm stuck on:** Getting ghosted by everyone on Discord and Slack for the user interviews. It’s so annoying, I’m sending out messages and just getting left on read. 
 
 **Plan for tomorrow:** Hooking up the LLM for the "AI Advice" layer using Vercel AI SDK and finally writing those automated tests so I know for a fact the math isn't going to break.
+## Day 5 — 2026-05-11
+
+**Hours worked:** 8
+
+**What I did:** Integrated Upstash Redis and Resend. Built the `/api/save` route.
+
+**What I learned:** Vercel environment variables are a pain if you don't sync them right away.
+
+**Blockers:** 500 errors on the save route due to missing DB keys.
+*
+*Plan for tomorrow:** Branding and bug fixes.
+
+## Day 6 — 2026-05-12
+
+**Hours worked:** 7
+
+**What I did:** Rebranded to Vantage. Fixed the "Gemini 0-seat" bug where the website wouldnt count any seats for Gemini plans.
+
+**What I learned:** Off-by-one errors in the logic can break the entire UX.
+
+**Blockers:** Got stuck renaming folders in Git.
+
+**Plan for tomorrow:** None (Uploading the project today).
 
 
