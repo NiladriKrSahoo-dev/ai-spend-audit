@@ -11,8 +11,6 @@ const TOOLS = [
   { name: "Claude",         defaultPlan: "Team",     defaultSeats: 0 },
   { name: "GitHub Copilot", defaultPlan: "Business", defaultSeats: 0 },
   { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 0 }, 
-  { name: "Anthropic API",  defaultPlan: "API direct", defaultSeats: 0 },
-  { name: "OpenAI API",     defaultPlan: "API direct", defaultSeats: 0 },
   { name: "V0.dev",         defaultPlan: "Team",     defaultSeats: 0 },
 ];
 
@@ -41,7 +39,7 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem("auditConfigs_v9");
+    const saved = localStorage.getItem("vantage_audit_v10");
     if (saved) {
       try { setConfigs(JSON.parse(saved)); } catch (e) {}
     } else {
@@ -144,7 +142,7 @@ export default function Home() {
     const toolName = TOOLS[i].name;
     const singleSeatPlans = ["Hobby", "Free", "Pro", "Individual", "Plus", "Go", "Premium", "Ultra"];
 
-    // FIXED LOGIC: Allows 1 seat, blocks > 1 for single-user tiers
+    // CLEAN SEAT LOGIC: Allows 1, blocks anything higher for single-user plans
     if (patch.seats !== undefined && patch.seats > 1) {
        if (singleSeatPlans.includes(configs[i].plan)) {
           setShakeIndex(i);
@@ -171,12 +169,12 @@ export default function Home() {
 
     nextConfigs[i] = toolConfig;
     setConfigs(nextConfigs);
-    localStorage.setItem("auditConfigs_v9", JSON.stringify(nextConfigs));
+    localStorage.setItem("vantage_audit_v10", JSON.stringify(nextConfigs));
   };
 
   const closeTour = () => {
     setShowTour(false);
-    localStorage.setItem("auditConfigs_v9", JSON.stringify(configs));
+    localStorage.setItem("vantage_audit_v10", JSON.stringify(configs));
   };
 
   if (!mounted) return null;
