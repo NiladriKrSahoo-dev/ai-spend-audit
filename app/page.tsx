@@ -33,7 +33,6 @@ export default function Home() {
   const [shakeIndex, setShakeIndex] = useState(null);
   const [toast, setToast] = useState({ show: false, message: "" });
 
-  // NEW: Lead Capture State
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [email, setEmail] = useState("");
   const [shareId, setShareId] = useState("");
@@ -62,21 +61,17 @@ export default function Home() {
   const optimizedPercent = totals.current > 0 ? (optimizedSpend / totals.current) * 100 : 0;
   const wastedPercent = totals.current > 0 ? (totals.savings / totals.current) * 100 : 0;
 
-  // STEP 1: Trigger the lead form first
   const initiateAudit = () => {
     setShowLeadModal(true);
   };
 
-  // STEP 2: Process email and fetch AI
+  // 🚀 FIXED: Now talks to both AI and Database!
   const submitLeadAndFetch = async (e) => {
     e.preventDefault();
     setShowLeadModal(false);
     setIsAiLoading(true);
     setAiResponse("");
-    
-    // TODO: We will wire this up to our real database in the next step
-    const mockDbId = Math.random().toString(36).substring(2, 9);
-    setShareId(mockDbId);
+    setShareId("");
 
     const detailedResults = results.map((r, i) => ({ ...r, actualToolName: TOOLS[i].name }));
     const bleedingTools = detailedResults.filter(r => r.totalSavings > 0);
@@ -88,7 +83,6 @@ export default function Home() {
         }).join("; ")
       : "All tools are currently 100% optimized. No waste detected.";
 
-    // 🚀 FIXED: 100-WORD MVP PROMPT
     const smartPrompt = `You are an expert financial auditor reviewing a company's SaaS stack. 
     Total monthly spend: $${totals.current}. Total wasted money: $${totals.savings}. 
     Exact waste breakdown: ${wasteDetails}. 
@@ -96,14 +90,32 @@ export default function Home() {
     Write a cohesive, highly professional paragraph of approximately 100 words. Start by summarizing the financial health of the AI stack, then explicitly identify the largest areas of capital leakage (naming the specific tools and reasons), and conclude with a firm, actionable recommendation for the CFO to immediately reclaim those wasted funds. Be direct, authoritative, and data-driven.`;
 
     try {
-      const res = await fetch("/api/chat", {
+      // 1. Fetch AI Report
+      const aiRes = await fetch("/api/chat", {
         method: "POST",
         body: JSON.stringify({ messages: [{ role: "user", content: smartPrompt }] }),
       });
-      const text = await res.text();
-      setAiResponse(text);
+      const aiText = await aiRes.text();
+      setAiResponse(aiText);
+
+      // 2. Save to Upstash Database
+      const dbRes = await fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email,
+          aiResponse: aiText,
+          totals: totals,
+          results: detailedResults
+        }),
+      });
+      
+      const dbData = await dbRes.json();
+      if (dbData.shareId) {
+        setShareId(dbData.shareId);
+      }
     } catch (err) {
-      setAiResponse("⚠️ Error: Could not connect to the AI auditor engine.");
+      setAiResponse("⚠️ Error: Could not generate report or save to database.");
     } finally {
       setIsAiLoading(false);
     }
@@ -159,7 +171,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#F7F7F5] text-[#111111] font-sans selection:bg-black selection:text-white pb-20 relative">
       
-      {/* LEAD CAPTURE MODAL */}
       <AnimatePresence>
         {showLeadModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#111111]/60 backdrop-blur-sm p-4">
@@ -181,7 +192,7 @@ export default function Home() {
                 />
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowLeadModal(false)} className="px-6 py-3 rounded-xl font-semibold text-[#666666] hover:bg-[#F0F0F0] transition-colors w-1/3">Cancel</button>
-                  <button type="submit" className="px-6 py-3 rounded-xl font-semibold text-white bg-[#111111] hover:bg-[#333333] transition-colors w-2/3 shadow-md shadow-black/10">Generate Report</button>
+                  <button type="submit" className="px-6 py-3 rounded-xl font-semibold text-white bg-[#111111] hover:bg-[#333333] transition-colors w-2/3 shadow-md shadow-black/10">Generate</button>
                 </div>
               </form>
             </motion.div>
@@ -212,7 +223,7 @@ export default function Home() {
                 <div>
                   <div className="w-12 h-12 bg-[#F0F0F0] rounded-full flex items-center justify-center mb-6">👋</div>
                   <h2 className="text-2xl font-bold mb-3 tracking-tight">Welcome to StackTrim</h2>
-                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">This tool audits your company's AI subscriptions using verified 2026 pricing to find wasted spend and ghost seats.</p>
+                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">This tool audits your company's AI subscriptions using verified pricing to find wasted spend and ghost seats.</p>
                 </div>
               )}
               {tourStep === 2 && (
@@ -327,7 +338,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* SHAREABLE LINK UI */}
                 {shareId && (
                   <div className="mt-4 pt-6 border-t border-[#E5E5E5] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
@@ -335,8 +345,18 @@ export default function Home() {
                       <p className="text-[12px] text-[#666666]">Anyone with this link can view this report.</p>
                     </div>
                     <div className="flex items-center gap-2 bg-[#F9F9F9] border border-[#E5E5E5] rounded-lg px-3 py-2 w-full md:w-auto">
-                      <span className="text-[13px] font-mono text-[#666666] truncate max-w-[200px]">stacktrim.vercel.app/audit/{shareId}</span>
-                      <button onClick={() => {navigator.clipboard.writeText(`https://stacktrim.vercel.app/audit/${shareId}`); triggerToast("Copied to clipboard!");}} className="text-[#111111] font-semibold text-[12px] hover:underline ml-2">Copy</button>
+                      <span className="text-[13px] font-mono text-[#666666] truncate max-w-[200px]">
+                        {typeof window !== 'undefined' ? window.location.host : ''}/audit/{shareId}
+                      </span>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/audit/${shareId}`); 
+                          triggerToast("Copied to clipboard!");
+                        }} 
+                        className="text-[#111111] font-semibold text-[12px] hover:underline ml-2"
+                      >
+                        Copy
+                      </button>
                     </div>
                   </div>
                 )}
