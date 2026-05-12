@@ -15,4 +15,4 @@
 5. **@ts-nocheck usage:** I used TypeScript extensions but kept some logic flexible with `any` types. For a 7-day MVP build, I prioritized shipping the feature set over fighting strict type errors.
 
 ## 🔗 Live Link
-[Insert your Vercel URL here]
+https://ai-spend-audit-34bqydphh-niladri-kumar-sahoo-s-projects.vercel.app
