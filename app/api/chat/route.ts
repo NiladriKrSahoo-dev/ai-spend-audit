@@ -8,36 +8,50 @@ export async function POST(req: Request) {
     const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
     if (!API_KEY) {
-      return new Response("Missing GOOGLE_GENERATIVE_AI_API_KEY in Vercel settings.", { status: 500 });
+      return new Response("Error: API Key missing in Vercel settings.", { status: 500 });
     }
 
-    // Direct REST call to Google Gemini - bypasses all library conflicts
+    // Using the stable /v1/ endpoint instead of /v1beta/ to avoid "model not found" errors
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [
+            {
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 500,
+          }
         }),
       }
     );
 
     const data = await response.json();
 
+    // Check if Google returned an error object
     if (data.error) {
-      throw new Error(data.error.message || "Google API Error");
+      console.error("Google API Error Details:", data.error);
+      return new Response(`Google API Error: ${data.error.message}`, { status: data.error.code || 500 });
     }
 
-    // Extract the text from the Google response format
-    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from AI.";
+    // Safely extract the text from the response structure
+    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!aiText) {
+      return new Response("Error: AI returned an empty response format.", { status: 500 });
+    }
 
     return new Response(aiText);
 
   } catch (error: any) {
-    console.error("BACKEND ERROR:", error);
-    return new Response(`Backend Error: ${error.message}`, { status: 500 });
+    console.error("CRITICAL BACKEND ERROR:", error);
+    return new Response(`Backend Crash: ${error.message}`, { status: 500 });
   }
 }
