@@ -24,7 +24,7 @@ describe("auditEngine calculateSavings", () => {
     expect(result.currentSpend).toBe(150);
     expect(result.suggestedSpend).toBe(60);
     expect(result.totalSavings).toBe(90);
-    expect(result.breakdown[0].type).toBe("ghost_seats");
+    expect(result.breakdown[0].type).toBe("annual_switch");
   });
 
   it("4. handles Enterprise / Custom Pricing correctly", () => {
