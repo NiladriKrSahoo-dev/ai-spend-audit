@@ -1,4 +1,4 @@
-import { calculateSavings } from "../lib/audit/auditEngine";
+import { calculateSavings } from "./auditEngine";
 
 describe("auditEngine calculateSavings", () => {
   it("1. calculates monthly math correctly", () => {
