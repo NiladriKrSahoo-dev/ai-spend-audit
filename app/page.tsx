@@ -38,6 +38,11 @@ export default function Home() {
     return { current, savings };
   }, [results]);
 
+  // Graph Calculations
+  const optimizedSpend = totals.current - totals.savings;
+  const optimizedPercent = totals.current > 0 ? (optimizedSpend / totals.current) * 100 : 0;
+  const wastedPercent = totals.current > 0 ? (totals.savings / totals.current) * 100 : 0;
+
   const handleGetAdvice = async () => {
     setIsAiLoading(true);
     setAiResponse("");
@@ -90,9 +95,9 @@ export default function Home() {
         
         {/* Main Dashboard Widget */}
         <header className="mb-12">
-          <div className="bg-white rounded-[24px] border border-[#E5E5E5] p-10 flex flex-col md:flex-row items-start md:items-center justify-between shadow-sm">
+          <div className="bg-white rounded-[24px] border border-[#E5E5E5] p-10 shadow-sm">
              
-             <div className="flex flex-col md:flex-row gap-12 md:gap-24 w-full items-start md:items-center">
+             <div className="flex flex-col md:flex-row gap-12 md:gap-24 w-full items-start md:items-center justify-between">
                
                {/* Savings Metric */}
                <div>
@@ -126,8 +131,37 @@ export default function Home() {
                  </button>
                </div>
              </div>
+
+             {/* NATIVE TAILWIND GRAPH */}
+             <div className="mt-10 pt-8 border-t border-[#E5E5E5]">
+               <h3 className="text-[13px] font-semibold text-[#666666] mb-4">Spend Allocation (Optimized vs Wasted)</h3>
+               
+               {/* The Bar */}
+               <div className="h-4 w-full bg-[#F0F0F0] rounded-full overflow-hidden flex">
+                 <motion.div 
+                   initial={{ width: 0 }} animate={{ width: `${optimizedPercent}%` }} transition={{ duration: 0.8 }}
+                   className="h-full bg-[#111111]" title="Optimized Spend"
+                 />
+                 <motion.div 
+                   initial={{ width: 0 }} animate={{ width: `${wastedPercent}%` }} transition={{ duration: 0.8 }}
+                   className="h-full bg-emerald-500" title="Wasted Spend (Savings)"
+                 />
+               </div>
+               
+               {/* Graph Legend */}
+               <div className="flex justify-between items-center text-[12px] mt-3 font-medium">
+                 <span className="text-[#111111] flex items-center gap-1.5">
+                   <span className="w-2 h-2 bg-[#111111] rounded-sm"></span> Optimized: ${optimizedSpend.toLocaleString()}
+                 </span>
+                 <span className="text-emerald-600 flex items-center gap-1.5">
+                   <span className="w-2 h-2 bg-emerald-500 rounded-sm"></span> Potential Savings: ${totals.savings.toLocaleString()}
+                 </span>
+               </div>
+             </div>
+
           </div>
           
+          {/* AI Response Box */}
           <AnimatePresence>
             {aiResponse && (
               <motion.div 
@@ -152,7 +186,7 @@ export default function Home() {
           <span className="text-[#666666] text-sm font-medium">{TOOLS.length} Tools</span>
         </div>
 
-        {/* Tool Grid (Like the Dribbble Kanban Cards) */}
+        {/* Tool Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {TOOLS.map((t, i) => {
             const r = results[i];
@@ -171,9 +205,10 @@ export default function Home() {
                     </p>
                   </div>
 
+                  {/* RESTORED WARNINGS (Subtle Red Style) */}
                   {r.warning && (
-                    <div className="mb-5 bg-[#F9F9F9] border border-[#EEEEEE] text-[#111111] text-[11px] px-3 py-1.5 rounded-md font-semibold inline-flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-[#111111] rounded-full" />
+                    <div className="mb-5 bg-[#FFF4F4] border border-[#FFE5E5] text-[#D92D20] text-[11px] px-3 py-1.5 rounded-md font-semibold inline-flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-[#D92D20] rounded-full" />
                       {r.warning}
                     </div>
                   )}
@@ -203,10 +238,18 @@ export default function Home() {
 
                 {hasSavings && (
                    <div className="mt-5 pt-5 border-t border-[#F0F0F0]">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center mb-2">
                         <span className="text-[12px] text-[#666666] font-medium">Optimized Savings</span>
                         <span className="text-[#111111] font-bold text-[14px]">+{isGemini ? "₹" : "$"}{r.totalSavings}</span>
                       </div>
+                      
+                      {/* RESTORED BREAKDOWN TEXT */}
+                      {r.breakdown?.map((b, idx) => (
+                         <p key={idx} className="text-[11px] text-[#888888] font-medium flex items-center gap-1.5 mt-1">
+                           <span className="w-1 h-1 bg-[#CCCCCC] rounded-full" />
+                           {b.type === "ghost_seats" ? "Optimize unused seats" : "Apply annual discount"}
+                         </p>
+                      ))}
                    </div>
                 )}
               </div>
