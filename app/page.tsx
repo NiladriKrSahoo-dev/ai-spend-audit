@@ -5,13 +5,14 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateSavings, getPlansForTool } from "../src/lib/audit/auditEngine";
 
+// CHANGED: Every tool now starts at exactly 0 seats for a clean slate
 const TOOLS = [
-  { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 12 },
-  { name: "ChatGPT",        defaultPlan: "Business", defaultSeats: 45 },
-  { name: "Claude",         defaultPlan: "Team",     defaultSeats: 8  },
-  { name: "GitHub Copilot", defaultPlan: "Business", defaultSeats: 30 },
-  { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 1  }, 
-  { name: "V0.dev",         defaultPlan: "Team",     defaultSeats: 5  },
+  { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 0 },
+  { name: "ChatGPT",        defaultPlan: "Business", defaultSeats: 0 },
+  { name: "Claude",         defaultPlan: "Team",     defaultSeats: 0 },
+  { name: "GitHub Copilot", defaultPlan: "Business", defaultSeats: 0 },
+  { name: "Gemini",         defaultPlan: "Pro",      defaultSeats: 0 }, 
+  { name: "V0.dev",         defaultPlan: "Team",     defaultSeats: 0 },
 ];
 
 const getPlanContext = (planName) => {
@@ -36,7 +37,8 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem("auditConfigs_v7");
+    // Bumping to v8 so your browser clears out the old pre-loaded test data
+    const saved = localStorage.getItem("auditConfigs_v8");
     if (saved) {
       try { setConfigs(JSON.parse(saved)); } catch (e) {}
     } else {
@@ -58,12 +60,10 @@ export default function Home() {
   const optimizedPercent = totals.current > 0 ? (optimizedSpend / totals.current) * 100 : 0;
   const wastedPercent = totals.current > 0 ? (totals.savings / totals.current) * 100 : 0;
 
-  // 🚀 FIXED: SURGICAL AI PROMPT & DATA PIPELINE
   const handleGetAdvice = async () => {
     setIsAiLoading(true);
     setAiResponse("");
     
-    // Map the actual tool names directly from our state so it NEVER says "unspecified"
     const detailedResults = results.map((r, i) => ({
       ...r,
       actualToolName: TOOLS[i].name
@@ -81,7 +81,6 @@ export default function Home() {
        wasteDetails = "All tools are currently 100% optimized. No waste detected.";
     }
 
-    // Strict, 2-sentence enforcement prompt
     const smartPrompt = `You are a ruthless, no-nonsense financial auditor reporting to a CFO. 
     Total monthly spend: $${totals.current}. 
     Total wasted money: $${totals.savings}. 
@@ -141,12 +140,12 @@ export default function Home() {
 
     nextConfigs[i] = toolConfig;
     setConfigs(nextConfigs);
-    localStorage.setItem("auditConfigs_v7", JSON.stringify(nextConfigs));
+    localStorage.setItem("auditConfigs_v8", JSON.stringify(nextConfigs));
   };
 
   const closeTour = () => {
     setShowTour(false);
-    localStorage.setItem("auditConfigs_v7", JSON.stringify(configs));
+    localStorage.setItem("auditConfigs_v8", JSON.stringify(configs));
   };
 
   if (!mounted) return null;
