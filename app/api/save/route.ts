@@ -51,13 +51,11 @@ export async function POST(req: Request) {
               <h2>Your AI Spend Audit is Complete</h2>
               <p>We analyzed your SaaS stack and found <strong>$${totals.savings}</strong> in potential monthly savings.</p>
               <p><a href="${protocol}://${host}/audit/${shareId}" style="display: inline-block; padding: 10px 20px; background-color: #111; color: #fff; text-decoration: none; border-radius: 6px;">View Full Report</a></p>
-              <p><em>Note: If your report indicates significant waste, a Credex representative will reach out shortly for a free consultation to help you capture those savings.</em></p>
             </div>
           `
         });
       } catch (emailErr) {
          console.error("Email failed to send, but database saved:", emailErr);
-         // We don't throw an error here so the user still gets their shareable link even if the email fails.
       }
     } else {
       console.error("CRITICAL: Missing RESEND_API_KEY in Vercel");
