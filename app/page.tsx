@@ -36,7 +36,7 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem("auditConfigs_v6");
+    const saved = localStorage.getItem("auditConfigs_v7");
     if (saved) {
       try { setConfigs(JSON.parse(saved)); } catch (e) {}
     } else {
@@ -58,22 +58,37 @@ export default function Home() {
   const optimizedPercent = totals.current > 0 ? (optimizedSpend / totals.current) * 100 : 0;
   const wastedPercent = totals.current > 0 ? (totals.savings / totals.current) * 100 : 0;
 
-  // 🚀 INTELLIGENT AI PROMPT COMPILER
+  // 🚀 FIXED: SURGICAL AI PROMPT & DATA PIPELINE
   const handleGetAdvice = async () => {
     setIsAiLoading(true);
     setAiResponse("");
     
-    // Build a specific string of exactly WHERE the money is bleeding
-    const wasteDetails = results
-      .filter(r => r.totalSavings > 0)
-      .map(r => {
-        const reasons = r.breakdown.map(b => b.type === "ghost_seats" ? "unused inactive seats" : "suboptimal billing tier").join(" and ");
-        return `${r.toolName} (Bleeding $${r.totalSavings}/mo due to ${reasons})`;
-      }).join("; ");
+    // Map the actual tool names directly from our state so it NEVER says "unspecified"
+    const detailedResults = results.map((r, i) => ({
+      ...r,
+      actualToolName: TOOLS[i].name
+    }));
 
-    const smartPrompt = `Act as a ruthless financial auditor. The company is currently spending $${totals.current}/mo on AI SaaS, but $${totals.savings}/mo is completely wasted.
-    Here is the exact breakdown of the waste: ${wasteDetails || 'No waste detected.'}.
-    Write a sharp, 3-sentence executive summary telling the CFO exactly where the largest leaks are and the immediate action required to stop it. Do NOT just repeat the total numbers back to me—give actionable strategic advice based on the tool names provided.`;
+    const bleedingTools = detailedResults.filter(r => r.totalSavings > 0);
+
+    let wasteDetails = "";
+    if (bleedingTools.length > 0) {
+      wasteDetails = bleedingTools.map(r => {
+        const reasons = r.breakdown?.map(b => b.type === "ghost_seats" ? "unused inactive seats" : "suboptimal billing plan").join(" and ") || "unoptimized tier";
+        return `${r.actualToolName} ($${r.totalSavings}/mo lost to ${reasons})`;
+      }).join("; ");
+    } else {
+       wasteDetails = "All tools are currently 100% optimized. No waste detected.";
+    }
+
+    // Strict, 2-sentence enforcement prompt
+    const smartPrompt = `You are a ruthless, no-nonsense financial auditor reporting to a CFO. 
+    Total monthly spend: $${totals.current}. 
+    Total wasted money: $${totals.savings}. 
+    Exact waste breakdown: ${wasteDetails}. 
+    
+    Write a maximum of 2 sentences. Sentence 1: State exactly which specific tools are bleeding the most money and why. Sentence 2: Give a direct, surgical command on what to cut or downgrade immediately. 
+    Do NOT use filler words. Do NOT give philosophical advice. Be extremely direct.`;
 
     try {
       const res = await fetch("/api/chat", {
@@ -98,25 +113,21 @@ export default function Home() {
     let nextConfigs = [...configs];
     let toolConfig = { ...nextConfigs[i], ...patch };
     const toolName = TOOLS[i].name;
-
     const singleSeatPlans = ["Hobby", "Free", "Pro", "Individual", "Plus", "Go", "Premium", "Ultra"];
 
-    // 🚀 SHAKE & TOAST LOGIC: If clicking "+" on a single user plan
     if (patch.seats !== undefined && patch.seats > configs[i].seats) {
        if (singleSeatPlans.includes(configs[i].plan)) {
           setShakeIndex(i);
           triggerToast(`The ${configs[i].plan} tier is a single-user plan. Limited to 1 seat.`);
           setTimeout(() => setShakeIndex(null), 500);
-          return; // Abort the update
+          return; 
        }
     }
 
-    // If changing dropdown TO a single user plan, auto-snap to 1
     if (patch.plan !== undefined && singleSeatPlans.includes(patch.plan)) {
       if (toolConfig.seats > 1) toolConfig.seats = 1;
     }
 
-    // Enforce SaaS Minimums
     if (patch.seats !== undefined) {
       if (toolName === "Claude" && toolConfig.plan === "Team") {
          if (configs[i].seats === 5 && patch.seats === 4) toolConfig.seats = 0;
@@ -130,12 +141,12 @@ export default function Home() {
 
     nextConfigs[i] = toolConfig;
     setConfigs(nextConfigs);
-    localStorage.setItem("auditConfigs_v6", JSON.stringify(nextConfigs));
+    localStorage.setItem("auditConfigs_v7", JSON.stringify(nextConfigs));
   };
 
   const closeTour = () => {
     setShowTour(false);
-    localStorage.setItem("auditConfigs_v6", JSON.stringify(configs));
+    localStorage.setItem("auditConfigs_v7", JSON.stringify(configs));
   };
 
   if (!mounted) return null;
@@ -143,7 +154,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#F7F7F5] text-[#111111] font-sans selection:bg-black selection:text-white pb-20 relative">
       
-      {/* 🚀 AESTHETIC TOAST NOTIFICATION */}
       <AnimatePresence>
         {toast.show && (
           <motion.div 
@@ -156,7 +166,6 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* TOUR MODAL */}
       <AnimatePresence>
         {showTour && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#111111]/40 backdrop-blur-sm p-4">
@@ -182,7 +191,7 @@ export default function Home() {
                 <div>
                   <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">✨</div>
                   <h2 className="text-2xl font-bold mb-3 tracking-tight">Get AI Insights</h2>
-                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">Once your stack is dialed in, click the black <b>Generate AI Report</b> button. Our engine will formulate a strategic summary for your CFO.</p>
+                  <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">Once your stack is dialed in, click the black <b>Generate AI Report</b> button. Our engine will formulate a surgical summary for your CFO.</p>
                 </div>
               )}
 
@@ -335,7 +344,6 @@ export default function Home() {
                       <p className="text-[9px] text-[#AAAAAA] text-right uppercase tracking-wider font-semibold">{planContext}</p>
                     </div>
                     
-                    {/* 🚀 BIG, SEPARATED TACTILE BUTTONS */}
                     <div className="flex justify-between items-center pt-1">
                       <p className="text-[12px] text-[#888888] font-medium">Allocated Seats</p>
                       <div className="flex items-center gap-3">
