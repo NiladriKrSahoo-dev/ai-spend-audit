@@ -146,7 +146,8 @@ export default function Home() {
     const toolName = TOOLS[i].name;
     const singleSeatPlans = ["Hobby", "Free", "Pro", "Individual", "Plus", "Go", "Premium", "Ultra"];
 
-    if (patch.seats !== undefined && patch.seats > configs[i].seats) {
+    // BUG FIXED HERE: Changed patch.seats > configs[i].seats to patch.seats > 1
+    if (patch.seats !== undefined && patch.seats > 1) {
        if (singleSeatPlans.includes(configs[i].plan)) {
           setShakeIndex(i);
           triggerToast(`The ${configs[i].plan} tier is a single-user plan. Limited to 1 seat.`);
