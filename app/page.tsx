@@ -65,7 +65,7 @@ export default function Home() {
     setShowLeadModal(true);
   };
 
-  // 🚀 FIXED: Now talks to both AI and Database!
+  // 🚀 WITH STRICT ERROR DEBUGGING
   const submitLeadAndFetch = async (e) => {
     e.preventDefault();
     setShowLeadModal(false);
@@ -90,15 +90,21 @@ export default function Home() {
     Write a cohesive, highly professional paragraph of approximately 100 words. Start by summarizing the financial health of the AI stack, then explicitly identify the largest areas of capital leakage (naming the specific tools and reasons), and conclude with a firm, actionable recommendation for the CFO to immediately reclaim those wasted funds. Be direct, authoritative, and data-driven.`;
 
     try {
-      // 1. Fetch AI Report
+      // 1. Fetch AI Report (With Strict Error Checking)
       const aiRes = await fetch("/api/chat", {
         method: "POST",
         body: JSON.stringify({ messages: [{ role: "user", content: smartPrompt }] }),
       });
+      
+      if (!aiRes.ok) {
+        const errText = await aiRes.text();
+        throw new Error(`AI API failed (${aiRes.status}): ${errText}`);
+      }
+      
       const aiText = await aiRes.text();
-      setAiResponse(aiText);
+      setAiResponse(aiText); // Show the AI text immediately so we know it worked
 
-      // 2. Save to Upstash Database
+      // 2. Save to Database (With Strict Error Checking)
       const dbRes = await fetch("/api/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -110,12 +116,20 @@ export default function Home() {
         }),
       });
       
+      if (!dbRes.ok) {
+        const errText = await dbRes.text();
+        throw new Error(`Database failed (${dbRes.status}): ${errText}`);
+      }
+      
       const dbData = await dbRes.json();
       if (dbData.shareId) {
         setShareId(dbData.shareId);
       }
+
     } catch (err) {
-      setAiResponse("⚠️ Error: Could not generate report or save to database.");
+      console.error(err);
+      // Force the EXACT error message to appear on the screen!
+      setAiResponse(`⚠️ CRASH REPORT: ${err.message}`);
     } finally {
       setIsAiLoading(false);
     }
