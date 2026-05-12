@@ -1,25 +1,37 @@
 import { Redis } from '@upstash/redis';
 import { notFound } from 'next/navigation';
 
-// Initialize Redis 
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
-
 export default async function AuditReportPage({ params }: { params: { id: string } }) {
-  // 1. Fetch the data from the database using the URL parameter
+  
+  // 1. Safely check for database keys
+  const dbUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const dbToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!dbUrl || !dbToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-10 bg-[#F7F7F5]">
+        <div className="bg-red-50 text-red-600 p-6 rounded-xl border border-red-200 font-medium">
+          CRITICAL: Database keys are missing in Vercel for this page!
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Initialize Redis safely inside the component
+  const redis = new Redis({ url: dbUrl, token: dbToken });
+
+  // 3. Fetch the data from the database using the URL parameter
   const auditData: any = await redis.get(`audit:${params.id}`);
 
-  // 2. If the ID doesn't exist, show a 404 page
+  // 4. If the ID doesn't exist in the database, trigger the 404 page
   if (!auditData) {
     notFound();
   }
 
-  const { aiResponse, totals, results, email, createdAt } = auditData;
+  const { aiResponse, totals, email, createdAt } = auditData;
   const dateStr = new Date(createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-  // 3. Render the Premium Minimalist UI
+  // 5. Render the Premium Minimalist UI
   return (
     <div className="min-h-screen bg-[#F7F7F5] text-[#111111] font-sans selection:bg-black selection:text-white pb-20">
       <nav className="pt-6 pb-4 px-8 max-w-[800px] mx-auto flex items-center justify-between">
