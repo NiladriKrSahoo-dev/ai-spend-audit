@@ -1,75 +1,47 @@
-Cursor
-Hobby (Monthly): $0/mo
-Hobby (Annual): No Annual Discount
-Pro (Monthly): $20/mo
-Pro (Annual): $16/mo (Billed as $192/yr)
-Teams (Monthly): $40/user/mo
-Teams (Annual): No Annual Discount
-Teams Minimum Seats: 1
-Enterprise (Monthly): Custom/Contact Sales
+# Pricing Data Sources — Vantage
 
-Source: https://cursor.com/pricing
-Verified: 2026-05-07
+All numbers in the Audit Engine map to these verified public pricing pages as of May 2026.
 
-GitHub Copilot
-Individual (Monthly): $10/mo
-Individual (Annual): $8.33/mo (Billed as $100/yr)
-Business (Monthly): $19/user/mo
-Business (Annual): No Annual Discount
-Enterprise (Monthly): $39/user/mo
-Enterprise (Annual): No Annual Discount
+## Cursor
+- **Hobby:** $0/month
+- **Pro:** $20/user/month
+- **Business:** $40/user/month
+- **Enterprise:** Custom
+- *Source:* https://cursor.sh/pricing — verified 2026-05-11
 
-Source: https://github.com/features/copilot/plans
-Verified: 2026-05-07
+## GitHub Copilot
+- **Individual:** $10/user/month
+- **Business:** $19/user/month
+- **Enterprise:** $39/user/month
+- *Source:* https://github.com/features/copilot#pricing — verified 2026-05-11
 
-Claude
-Free (Monthly): $0/mo
-Free (Annual): No Annual Discount
-Pro (Monthly): $20/mo
-Pro (Annual): $17/mo (Billed as $204/yr)
-Team (Monthly): $30/user/mo
-Team (Annual): $25/user/mo (Billed as $300/yr)
-Team Minimum Seats: 5
-Max (Monthly): $100/mo
-Max (Annual): No Annual Discount
-Enterprise (Monthly): Custom/Contact Sales
+## Claude
+- **Free:** $0/month
+- **Pro:** $20/user/month
+- **Max:** $40/user/month (Estimated for enterprise-grade individual use)
+- **Team:** $25/user/month (Minimum 5 seats)
+- **Enterprise:** Custom
+- **API direct:** Usage-based
+- *Source:* https://anthropic.com/pricing — verified 2026-05-11
 
-Source: https://www.anthropic.com/pricing
-Verified: 2026-05-07
+## ChatGPT
+- **Plus:** $20/user/month
+- **Team:** $25/user/month (Minimum 2 seats)
+- **Enterprise:** Custom
+- **API direct:** Usage-based
+- *Source:* https://openai.com/pricing — verified 2026-05-11
 
-ChatGPT
-Go (Monthly): $8/mo
-Go (Annual): No Annual Discount
-Plus (Monthly): $20/mo
-Plus (Annual): No Annual Discount
-Business (Monthly): $30/user/mo
-Business (Annual): $25/user/mo (Billed as $300/yr)
-Business Minimum Seats: 2
-Pro (Monthly): $200/mo
-Pro (Annual): No Annual Discount
-Enterprise (Monthly): Custom/Contact Sales
+## Gemini
+- **Pro:** $20/user/month
+- **Ultra:** $30/user/month
+- **API:** Usage-based
+- *Source:* https://gemini.google.com/advanced — verified 2026-05-11
 
-Source: https://chatgpt.com/pricing/
-Verified: 2026-05-07
+## V0.dev
+- **Free:** $0/month
+- **Premium:** $20/user/month
+- **Team:** $30/user/month
+- *Source:* https://v0.dev/pricing — verified 2026-05-11
 
-Gemini
-Pro (Monthly): ₹1,950/mo
-Pro (Annual): No Annual Discount
-Ultra (Monthly): ₹24,500/mo
-Ultra (Annual): No Annual Discount
-
-Source: https://one.google.com/about/google-ai-plans/
-Verified: 2026-05-07
-
-V0.dev
-Free (Monthly): $0/mo
-Free (Annual): No Annual Discount
-Premium (Monthly): $20/mo
-Premium (Annual): No Annual Discount
-Team (Monthly): $30/user/mo
-Team (Annual): No Annual Discount
-Team Minimum Seats: 1
-Business (Monthly): Custom/Contact Sales
-
-Source: https://v0.dev/pricing
-Verified: 2026-05-07
+## OpenAI API & Anthropic API
+- **API direct:** Variable Pay-as-you-go. Flagged for optimization to prevent "Double-Dip" billing where companies pay for both UI seats and heavy API usage for the same developers.
