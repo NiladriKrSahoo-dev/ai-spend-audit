@@ -1,31 +1,47 @@
 import { Redis } from '@upstash/redis';
-import { notFound } from 'next/navigation';
 
-export default async function AuditReportPage({ params }: { params: { id: string } }) {
+// 🚀 THE MAGIC LINE: Forces Next.js to NEVER cache this page so it always checks the real database
+export const dynamic = 'force-dynamic';
+
+export default async function AuditReportPage(props: any) {
   
-  // 1. Safely check for database keys
+  // 1. Safely handle the ID parameter for all versions of Next.js
+  const params = await props.params;
+  const id = params.id;
+
   const dbUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const dbToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!dbUrl || !dbToken) {
+    return <div className="p-10 text-red-600 font-bold">CRITICAL: Database keys are missing!</div>;
+  }
+
+  // 2. Initialize Redis
+  const redis = new Redis({ url: dbUrl, token: dbToken });
+
+  // 3. Fetch the data
+  const auditData: any = await redis.get(`audit:${id}`);
+
+  // 🛑 INSTEAD OF A 404, WE BUILD A CRASH REPORTER SCREEN
+  if (!auditData) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-10 bg-[#F7F7F5]">
-        <div className="bg-red-50 text-red-600 p-6 rounded-xl border border-red-200 font-medium">
-          CRITICAL: Database keys are missing in Vercel for this page!
+      <div className="min-h-screen bg-[#F7F7F5] p-10 font-sans flex items-center justify-center">
+        <div className="bg-white border-2 border-[#111111] p-8 rounded-[24px] max-w-2xl w-full shadow-2xl">
+          <h1 className="text-2xl font-bold text-[#111111] mb-4">⚠️ Data Not Found in Database</h1>
+          <p className="mb-6 text-[#666666]">The page loaded successfully, but the Upstash Database returned <b>null</b>.</p>
+          
+          <div className="bg-[#F9F9F9] p-6 rounded-xl border border-[#E5E5E5] space-y-3 font-mono text-[13px] text-[#111111]">
+            <p><b>ID Searched from URL:</b> {id}</p>
+            <p><b>Database Key:</b> audit:{id}</p>
+            <p><b>Database URL:</b> {dbUrl.substring(0, 25)}...</p>
+          </div>
+
+          <div className="mt-6 p-4 bg-red-50 text-red-600 rounded-xl text-[13px] font-medium border border-red-100">
+            If you generated this report recently, the API Route failed to save it. If you generated it a long time ago, the database might have cleared. Generate a new report and try again!
+          </div>
         </div>
       </div>
     );
-  }
-
-  // 2. Initialize Redis safely inside the component
-  const redis = new Redis({ url: dbUrl, token: dbToken });
-
-  // 3. Fetch the data from the database using the URL parameter
-  const auditData: any = await redis.get(`audit:${params.id}`);
-
-  // 4. If the ID doesn't exist in the database, trigger the 404 page
-  if (!auditData) {
-    notFound();
   }
 
   const { aiResponse, totals, email, createdAt } = auditData;
@@ -56,14 +72,14 @@ export default async function AuditReportPage({ params }: { params: { id: string
                 <span className="bg-[#F0F0F0] text-[#111111] px-2 py-0.5 rounded text-[10px] uppercase tracking-wider">Monthly</span>
              </p>
              <p className="text-5xl font-bold tracking-tighter leading-none text-emerald-600">
-               ${totals.savings.toLocaleString()}
+               ${totals?.savings?.toLocaleString() || 0}
              </p>
            </div>
            <div className="hidden md:block w-px h-16 bg-[#E5E5E5]"></div>
            <div>
              <p className="text-[13px] font-semibold text-[#666666] mb-2">Total SaaS Spend</p>
              <p className="text-3xl font-semibold tracking-tight text-[#111111]">
-               ${totals.current.toLocaleString()}
+               ${totals?.current?.toLocaleString() || 0}
              </p>
            </div>
         </div>
@@ -75,7 +91,7 @@ export default async function AuditReportPage({ params }: { params: { id: string
             AI Strategic Summary
           </h2>
           <div className="text-[#111111] text-[15px] leading-relaxed font-medium space-y-4 bg-[#F9F9F9] p-6 rounded-[16px] border border-[#E5E5E5]">
-             {aiResponse.split('\n').map((para: string, i: number) => <p key={i}>{para}</p>)}
+             {aiResponse ? aiResponse.split('\n').map((para: string, i: number) => <p key={i}>{para}</p>) : <p>No summary generated.</p>}
           </div>
         </div>
 
