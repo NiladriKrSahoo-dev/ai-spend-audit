@@ -142,7 +142,6 @@ export default function Home() {
     const toolName = TOOLS[i].name;
     const singleSeatPlans = ["Hobby", "Free", "Pro", "Individual", "Plus", "Go", "Premium", "Ultra"];
 
-    // CLEAN SEAT LOGIC: Allows 1, blocks anything higher for single-user plans
     if (patch.seats !== undefined && patch.seats > 1) {
        if (singleSeatPlans.includes(configs[i].plan)) {
           setShakeIndex(i);
@@ -181,6 +180,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#F7F7F5] text-[#111111] font-sans selection:bg-black selection:text-white pb-20 relative">
+      <h1 className="sr-only">Vantage AI Subscription Audit Dashboard</h1>
 
       <AnimatePresence>
         {showLeadModal && (
@@ -188,15 +188,18 @@ export default function Home() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="bg-white rounded-[24px] shadow-2xl p-10 max-w-md w-full relative border border-[#E5E5E5]"
+              role="dialog" aria-modal="true" aria-labelledby="modal-title"
             >
               <div className="w-12 h-12 bg-[#F0F0F0] rounded-full flex items-center justify-center mb-6">
-                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
               </div>
-              <h2 className="text-2xl font-bold mb-3 tracking-tight">Unlock Your Vantage Report</h2>
+              <h2 id="modal-title" className="text-2xl font-bold mb-3 tracking-tight">Unlock Your Vantage Report</h2>
               <p className="text-[#666666] leading-relaxed mb-6 text-[15px]">Enter your work email to generate the 100-word executive summary and create a shareable link for your team.</p>
 
               <form onSubmit={submitLeadAndFetch} className="space-y-4">
+                <label htmlFor="work-email" className="sr-only">Work Email Address</label>
                 <input 
+                  id="work-email"
                   type="email" required placeholder="name@company.com" 
                   value={email} onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-[#F9F9F9] border border-[#E5E5E5] px-4 py-3 rounded-xl outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111] transition-all font-medium placeholder:text-[#AAAAAA]"
@@ -216,8 +219,9 @@ export default function Home() {
           <motion.div 
             initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
             className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#111111] text-white px-6 py-3.5 rounded-full shadow-2xl z-[200] flex items-center gap-3 font-semibold text-[13px] border border-[#333333]"
+            role="status"
           >
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" aria-hidden="true"></span>
             {toast.message}
           </motion.div>
         )}
@@ -229,25 +233,26 @@ export default function Home() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="bg-white rounded-[24px] shadow-2xl p-10 max-w-md w-full relative border border-[#E5E5E5]"
+              role="dialog" aria-modal="true" aria-labelledby="tour-title"
             >
               {tourStep === 1 && (
                 <div>
-                  <div className="w-12 h-12 bg-[#F0F0F0] rounded-full flex items-center justify-center mb-6">👋</div>
-                  <h2 className="text-2xl font-bold mb-3 tracking-tight">Welcome to Vantage</h2>
+                  <div className="w-12 h-12 bg-[#F0F0F0] rounded-full flex items-center justify-center mb-6" aria-hidden="true">👋</div>
+                  <h2 id="tour-title" className="text-2xl font-bold mb-3 tracking-tight">Welcome to Vantage</h2>
                   <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">This tool audits your company's AI subscriptions using verified pricing to find wasted spend and ghost seats.</p>
                 </div>
               )}
               {tourStep === 2 && (
                 <div>
-                  <div className="w-12 h-12 bg-[#F0F0F0] rounded-full flex items-center justify-center mb-6">⚙️</div>
-                  <h2 className="text-2xl font-bold mb-3 tracking-tight">Smart Tier Logic</h2>
+                  <div className="w-12 h-12 bg-[#F0F0F0] rounded-full flex items-center justify-center mb-6" aria-hidden="true">⚙️</div>
+                  <h2 id="tour-title" className="text-2xl font-bold mb-3 tracking-tight">Smart Tier Logic</h2>
                   <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">Our UI enforces real-world constraints. Try adding multiple seats to a single-user plan like "ChatGPT Pro" to see our error handling.</p>
                 </div>
               )}
               {tourStep === 3 && (
                 <div>
-                  <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">✨</div>
-                  <h2 className="text-2xl font-bold mb-3 tracking-tight">Get AI Insights</h2>
+                  <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6" aria-hidden="true">✨</div>
+                  <h2 id="tour-title" className="text-2xl font-bold mb-3 tracking-tight">Get AI Insights</h2>
                   <p className="text-[#666666] leading-relaxed mb-8 text-[15px]">Once your stack is dialed in, click the black <b>Generate AI Report</b> button. Our engine will formulate a surgical summary for your CFO.</p>
                 </div>
               )}
@@ -274,20 +279,19 @@ export default function Home() {
 
       <nav className="pt-6 pb-4 px-8 max-w-[1200px] mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-[#111111] rounded-sm"></div>
+          <div className="w-4 h-4 bg-[#111111] rounded-sm" aria-hidden="true"></div>
           <span className="font-bold text-[15px] tracking-tight">Vantage</span>
         </div>
         <div className="flex gap-6 text-sm font-medium text-[#666666]">
           <span className="cursor-pointer hover:text-black transition-colors">Dashboard</span>
-          <button onClick={() => { setTourStep(1); setShowTour(true); }} className="cursor-pointer hover:text-black transition-colors flex items-center gap-1">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <button onClick={() => { setTourStep(1); setShowTour(true); }} className="cursor-pointer hover:text-black transition-colors flex items-center gap-1" aria-label="Open tour">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             Tour
           </button>
         </div>
       </nav>
 
       <main className="max-w-[1200px] mx-auto px-8 py-8">
-
         <header className="mb-12">
           <div className="bg-white rounded-[24px] border border-[#E5E5E5] p-10 shadow-sm">
              <div className="flex flex-col md:flex-row gap-12 md:gap-24 w-full items-start md:items-center justify-between">
@@ -301,7 +305,7 @@ export default function Home() {
                  </p>
                </div>
 
-               <div className="hidden md:block w-px h-20 bg-[#E5E5E5]"></div>
+               <div className="hidden md:block w-px h-20 bg-[#E5E5E5]" aria-hidden="true"></div>
 
                <div>
                  <p className="text-[13px] font-semibold text-[#666666] mb-2">Current Spend</p>
@@ -322,14 +326,14 @@ export default function Home() {
              </div>
 
              <div className="mt-10 pt-8 border-t border-[#E5E5E5]">
-               <h3 className="text-[13px] font-semibold text-[#666666] mb-4">Spend Allocation (Optimized vs Wasted)</h3>
-               <div className="h-4 w-full bg-[#F0F0F0] rounded-full overflow-hidden flex">
+               <h2 className="text-[13px] font-semibold text-[#666666] mb-4">Spend Allocation (Optimized vs Wasted)</h2>
+               <div className="h-4 w-full bg-[#F0F0F0] rounded-full overflow-hidden flex" role="progressbar" aria-valuenow={optimizedPercent} aria-valuemin="0" aria-valuemax="100">
                  <motion.div initial={{ width: 0 }} animate={{ width: `${optimizedPercent}%` }} transition={{ duration: 0.8 }} className="h-full bg-[#111111]" />
                  <motion.div initial={{ width: 0 }} animate={{ width: `${wastedPercent}%` }} transition={{ duration: 0.8 }} className="h-full bg-emerald-500" />
                </div>
                <div className="flex justify-between items-center text-[12px] mt-3 font-medium">
-                 <span className="text-[#111111] flex items-center gap-1.5"><span className="w-2 h-2 bg-[#111111] rounded-sm"></span> Optimized: ${optimizedSpend.toLocaleString()}</span>
-                 <span className="text-emerald-600 flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-500 rounded-sm"></span> Potential Savings: ${totals.savings.toLocaleString()}</span>
+                 <span className="text-[#111111] flex items-center gap-1.5"><span className="w-2 h-2 bg-[#111111] rounded-sm" aria-hidden="true"></span> Optimized: ${optimizedSpend.toLocaleString()}</span>
+                 <span className="text-emerald-700 flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-500 rounded-sm" aria-hidden="true"></span> Potential Savings: ${totals.savings.toLocaleString()}</span>
                </div>
              </div>
           </div>
@@ -342,7 +346,7 @@ export default function Home() {
               >
                 <div className="flex gap-6">
                   <div className="w-10 h-10 rounded-full bg-[#F0F0F0] flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                   </div>
                   <div className="text-[#111111] text-[15px] leading-relaxed font-medium space-y-4">
                      {aiResponse.split('\n').map((para, i) => <p key={i}>{para}</p>)}
@@ -406,7 +410,7 @@ export default function Home() {
 
                   {r.warning && (
                     <div className="mb-5 bg-[#FFF4F4] border border-[#FFE5E5] text-[#D92D20] text-[11px] px-3 py-2 rounded-md font-bold inline-flex items-center gap-2 shadow-sm w-full">
-                      <span className="w-1.5 h-1.5 bg-[#D92D20] rounded-full flex-shrink-0 animate-pulse" />
+                      <span className="w-1.5 h-1.5 bg-[#D92D20] rounded-full flex-shrink-0 animate-pulse" aria-hidden="true" />
                       {r.warning.includes("plan") ? "Incompatible Plan Combination" : r.warning}
                     </div>
                   )}
@@ -414,8 +418,9 @@ export default function Home() {
                   <div className="space-y-5">
                     <div className="border-b border-[#F0F0F0] pb-3">
                       <div className="flex justify-between items-center mb-1">
-                        <p className="text-[12px] text-[#888888] font-medium">Plan Tier</p>
+                        <label htmlFor={`plan-select-${i}`} className="text-[12px] text-[#888888] font-medium">Plan Tier</label>
                         <select 
+                          id={`plan-select-${i}`}
                           value={configs[i].plan}
                           onChange={(e) => update(i, { plan: e.target.value })}
                           className="bg-transparent text-[13px] text-[#111111] font-semibold outline-none cursor-pointer text-right min-w-[100px]"
@@ -429,11 +434,19 @@ export default function Home() {
                     <div className="flex justify-between items-center pt-1">
                       <p className="text-[12px] text-[#888888] font-medium">Allocated Seats</p>
                       <div className="flex items-center gap-3">
-                        <button onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} className="w-10 h-10 flex items-center justify-center text-[#666666] bg-white border border-[#E5E5E5] hover:border-[#111111] hover:text-[#111111] rounded-xl font-medium text-xl transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#E5E5E5]">
+                        <button 
+                          onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} 
+                          aria-label={`Decrease seats for ${t.name}`}
+                          className="w-10 h-10 flex items-center justify-center text-[#666666] bg-white border border-[#E5E5E5] hover:border-[#111111] hover:text-[#111111] rounded-xl font-medium text-xl transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#E5E5E5]"
+                        >
                           −
                         </button>
                         <span className="w-6 text-center font-bold text-[#111111] text-[16px]">{configs[i].seats}</span>
-                        <button onClick={() => update(i, { seats: configs[i].seats + 1 })} className="w-10 h-10 flex items-center justify-center text-[#666666] bg-white border border-[#E5E5E5] hover:border-[#111111] hover:text-[#111111] rounded-xl font-medium text-xl transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#E5E5E5]">
+                        <button 
+                          onClick={() => update(i, { seats: configs[i].seats + 1 })} 
+                          aria-label={`Increase seats for ${t.name}`}
+                          className="w-10 h-10 flex items-center justify-center text-[#666666] bg-white border border-[#E5E5E5] hover:border-[#111111] hover:text-[#111111] rounded-xl font-medium text-xl transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#E5E5E5]"
+                        >
                           +
                         </button>
                       </div>
@@ -445,12 +458,12 @@ export default function Home() {
                    <div className="mt-5 pt-5 border-t border-[#F0F0F0]">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-[12px] text-[#666666] font-medium">Optimized Savings</span>
-                        <span className="text-emerald-600 font-bold text-[14px]">+{isGemini ? "₹" : "$"}{r.totalSavings}</span>
+                        <span className="text-emerald-700 font-bold text-[14px]">+{isGemini ? "₹" : "$"}{r.totalSavings}</span>
                       </div>
 
                       {r.breakdown?.map((b, idx) => (
                          <p key={idx} className="text-[11px] text-[#D92D20] font-bold flex items-center gap-1.5 mt-1 bg-[#FFF4F4] px-2 py-1 rounded">
-                           <span className="w-1 h-1 bg-[#D92D20] rounded-full" />
+                           <span className="w-1 h-1 bg-[#D92D20] rounded-full" aria-hidden="true" />
                            {b.type === "ghost_seats" ? "Ghost seats detected (Downgrade)" : "Incompatible billing (Switch to Annual)"}
                          </p>
                       ))}
