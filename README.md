@@ -1,5 +1,13 @@
 # Vantage — AI SaaS Audit 
+## 📸 Screenshots
+![Landing Page](./public/screenshots/landing.png)
+*Professional, cinematic dashboard interface for spend entry.*
 
+![Audit Results](./public/screenshots/audit-results.png)
+*Detailed breakdown of "Annual Switch" and "Ghost Seat" savings.*
+
+![CI Compliance](./public/screenshots/ci-check.png)
+*Verified GitHub Actions passing for 100% production stability.*
 **Vantage** is an automated audit engine built for CTOs and Engineering leads to stop capital leakage in their AI stack. It identifies ghost seats, suboptimal billing cycles, and plan mismatches across Cursor, Claude, ChatGPT, and more.
 
 ## 🚀 Quick Start
