@@ -5,7 +5,6 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateSavings, getPlansForTool } from "../src/lib/audit/auditEngine";
 
-// CHANGED: Every tool now starts at exactly 0 seats for a clean slate
 const TOOLS = [
   { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 0 },
   { name: "ChatGPT",        defaultPlan: "Business", defaultSeats: 0 },
@@ -29,16 +28,19 @@ export default function Home() {
   const [aiResponse, setAiResponse] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   
-  // Modals and Animations
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(1);
   const [shakeIndex, setShakeIndex] = useState(null);
   const [toast, setToast] = useState({ show: false, message: "" });
 
+  // NEW: Lead Capture State
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [shareId, setShareId] = useState("");
+
   useEffect(() => {
     setMounted(true);
-    // Bumping to v8 so your browser clears out the old pre-loaded test data
-    const saved = localStorage.getItem("auditConfigs_v8");
+    const saved = localStorage.getItem("auditConfigs_v9");
     if (saved) {
       try { setConfigs(JSON.parse(saved)); } catch (e) {}
     } else {
@@ -60,34 +62,38 @@ export default function Home() {
   const optimizedPercent = totals.current > 0 ? (optimizedSpend / totals.current) * 100 : 0;
   const wastedPercent = totals.current > 0 ? (totals.savings / totals.current) * 100 : 0;
 
-  const handleGetAdvice = async () => {
+  // STEP 1: Trigger the lead form first
+  const initiateAudit = () => {
+    setShowLeadModal(true);
+  };
+
+  // STEP 2: Process email and fetch AI
+  const submitLeadAndFetch = async (e) => {
+    e.preventDefault();
+    setShowLeadModal(false);
     setIsAiLoading(true);
     setAiResponse("");
     
-    const detailedResults = results.map((r, i) => ({
-      ...r,
-      actualToolName: TOOLS[i].name
-    }));
+    // TODO: We will wire this up to our real database in the next step
+    const mockDbId = Math.random().toString(36).substring(2, 9);
+    setShareId(mockDbId);
 
+    const detailedResults = results.map((r, i) => ({ ...r, actualToolName: TOOLS[i].name }));
     const bleedingTools = detailedResults.filter(r => r.totalSavings > 0);
 
-    let wasteDetails = "";
-    if (bleedingTools.length > 0) {
-      wasteDetails = bleedingTools.map(r => {
-        const reasons = r.breakdown?.map(b => b.type === "ghost_seats" ? "unused inactive seats" : "suboptimal billing plan").join(" and ") || "unoptimized tier";
-        return `${r.actualToolName} ($${r.totalSavings}/mo lost to ${reasons})`;
-      }).join("; ");
-    } else {
-       wasteDetails = "All tools are currently 100% optimized. No waste detected.";
-    }
+    let wasteDetails = bleedingTools.length > 0 
+      ? bleedingTools.map(r => {
+          const reasons = r.breakdown?.map(b => b.type === "ghost_seats" ? "unused inactive seats" : "suboptimal billing plan").join(" and ") || "unoptimized tier";
+          return `${r.actualToolName} ($${r.totalSavings}/mo lost to ${reasons})`;
+        }).join("; ")
+      : "All tools are currently 100% optimized. No waste detected.";
 
-    const smartPrompt = `You are a ruthless, no-nonsense financial auditor reporting to a CFO. 
-    Total monthly spend: $${totals.current}. 
-    Total wasted money: $${totals.savings}. 
+    // 🚀 FIXED: 100-WORD MVP PROMPT
+    const smartPrompt = `You are an expert financial auditor reviewing a company's SaaS stack. 
+    Total monthly spend: $${totals.current}. Total wasted money: $${totals.savings}. 
     Exact waste breakdown: ${wasteDetails}. 
     
-    Write a maximum of 2 sentences. Sentence 1: State exactly which specific tools are bleeding the most money and why. Sentence 2: Give a direct, surgical command on what to cut or downgrade immediately. 
-    Do NOT use filler words. Do NOT give philosophical advice. Be extremely direct.`;
+    Write a cohesive, highly professional paragraph of approximately 100 words. Start by summarizing the financial health of the AI stack, then explicitly identify the largest areas of capital leakage (naming the specific tools and reasons), and conclude with a firm, actionable recommendation for the CFO to immediately reclaim those wasted funds. Be direct, authoritative, and data-driven.`;
 
     try {
       const res = await fetch("/api/chat", {
@@ -140,12 +146,12 @@ export default function Home() {
 
     nextConfigs[i] = toolConfig;
     setConfigs(nextConfigs);
-    localStorage.setItem("auditConfigs_v8", JSON.stringify(nextConfigs));
+    localStorage.setItem("auditConfigs_v9", JSON.stringify(nextConfigs));
   };
 
   const closeTour = () => {
     setShowTour(false);
-    localStorage.setItem("auditConfigs_v8", JSON.stringify(configs));
+    localStorage.setItem("auditConfigs_v9", JSON.stringify(configs));
   };
 
   if (!mounted) return null;
@@ -153,6 +159,36 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#F7F7F5] text-[#111111] font-sans selection:bg-black selection:text-white pb-20 relative">
       
+      {/* LEAD CAPTURE MODAL */}
+      <AnimatePresence>
+        {showLeadModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#111111]/60 backdrop-blur-sm p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-[24px] shadow-2xl p-10 max-w-md w-full relative border border-[#E5E5E5]"
+            >
+              <div className="w-12 h-12 bg-[#F0F0F0] rounded-full flex items-center justify-center mb-6">
+                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              </div>
+              <h2 className="text-2xl font-bold mb-3 tracking-tight">Unlock Your AI Report</h2>
+              <p className="text-[#666666] leading-relaxed mb-6 text-[15px]">Enter your work email to generate the 100-word executive summary and create a shareable link for your team.</p>
+              
+              <form onSubmit={submitLeadAndFetch} className="space-y-4">
+                <input 
+                  type="email" required placeholder="name@company.com" 
+                  value={email} onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-[#F9F9F9] border border-[#E5E5E5] px-4 py-3 rounded-xl outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111] transition-all font-medium placeholder:text-[#AAAAAA]"
+                />
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setShowLeadModal(false)} className="px-6 py-3 rounded-xl font-semibold text-[#666666] hover:bg-[#F0F0F0] transition-colors w-1/3">Cancel</button>
+                  <button type="submit" className="px-6 py-3 rounded-xl font-semibold text-white bg-[#111111] hover:bg-[#333333] transition-colors w-2/3 shadow-md shadow-black/10">Generate Report</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {toast.show && (
           <motion.div 
@@ -254,7 +290,7 @@ export default function Home() {
 
                <div className="ml-auto mt-6 md:mt-0 w-full md:w-auto">
                  <button 
-                    onClick={handleGetAdvice}
+                    onClick={initiateAudit}
                     disabled={isAiLoading || totals.savings === 0}
                     className="w-full md:w-auto bg-[#111111] text-white px-8 py-4 rounded-full font-semibold text-[14px] hover:bg-[#333333] transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-black/5"
                  >
@@ -280,14 +316,30 @@ export default function Home() {
             {aiResponse && (
               <motion.div 
                 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                className="mt-6 p-8 bg-white border border-[#E5E5E5] rounded-[24px] text-left shadow-sm flex gap-6"
+                className="mt-6 p-8 bg-white border border-[#E5E5E5] rounded-[24px] text-left shadow-sm flex flex-col gap-6"
               >
-                <div className="w-10 h-10 rounded-full bg-[#F0F0F0] flex items-center justify-center flex-shrink-0">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <div className="flex gap-6">
+                  <div className="w-10 h-10 rounded-full bg-[#F0F0F0] flex items-center justify-center flex-shrink-0">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                  </div>
+                  <div className="text-[#111111] text-[15px] leading-relaxed font-medium space-y-4">
+                     {aiResponse.split('\n').map((para, i) => <p key={i}>{para}</p>)}
+                  </div>
                 </div>
-                <p className="text-[#111111] text-[15px] leading-relaxed font-medium">
-                  {aiResponse}
-                </p>
+
+                {/* SHAREABLE LINK UI */}
+                {shareId && (
+                  <div className="mt-4 pt-6 border-t border-[#E5E5E5] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                      <p className="text-[13px] font-bold text-[#111111] mb-1">Share this audit</p>
+                      <p className="text-[12px] text-[#666666]">Anyone with this link can view this report.</p>
+                    </div>
+                    <div className="flex items-center gap-2 bg-[#F9F9F9] border border-[#E5E5E5] rounded-lg px-3 py-2 w-full md:w-auto">
+                      <span className="text-[13px] font-mono text-[#666666] truncate max-w-[200px]">stacktrim.vercel.app/audit/{shareId}</span>
+                      <button onClick={() => {navigator.clipboard.writeText(`https://stacktrim.vercel.app/audit/${shareId}`); triggerToast("Copied to clipboard!");}} className="text-[#111111] font-semibold text-[12px] hover:underline ml-2">Copy</button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
