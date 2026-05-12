@@ -5,8 +5,6 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateSavings, getPlansForTool } from "../src/lib/audit/auditEngine";
 
-const SPRING_SOFT = { type: "spring" as const, stiffness: 300, damping: 24 };
-
 const TOOLS = [
   { name: "Cursor",         defaultPlan: "Teams",    defaultSeats: 0 },
   { name: "ChatGPT",        defaultPlan: "Business", defaultSeats: 0 },
@@ -59,7 +57,7 @@ export default function Home() {
       const text = await res.text();
       setAiResponse(text);
     } catch (err) {
-      setAiResponse("⚠️ AI Error: Ensure GOOGLE_GENERATIVE_AI_API_KEY is correct in Vercel.");
+      setAiResponse("⚠️ AI Error: Could not connect to the engine.");
     } finally {
       setIsAiLoading(false);
     }
@@ -74,95 +72,145 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white p-6 font-sans">
-      <main className="max-w-4xl mx-auto">
-        <header className="text-center mb-12">
-          <h1 className="text-3xl font-black tracking-tighter mb-4 text-slate-100 uppercase">Credex AI Auditor</h1>
-          <div className="bg-[#0f172a] border border-slate-800 p-8 rounded-3xl shadow-2xl">
-             <p className="text-xs uppercase font-bold text-slate-500 mb-2 tracking-widest font-mono">Monthly Potential Savings</p>
-             <p className="text-7xl font-mono text-green-400 font-bold tracking-tight">${totals.savings.toLocaleString()}</p>
-             <p className="text-sm text-slate-400 mt-2 font-mono">Current Spend: ${totals.current.toLocaleString()}</p>
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-200">
+      
+      {/* Navbar */}
+      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-blue-600 to-violet-600 text-white w-9 h-9 rounded-xl flex items-center justify-center font-black text-xl shadow-lg shadow-blue-500/20">S</div>
+            <span className="font-extrabold text-xl tracking-tight text-slate-900">StackTrim</span>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-5xl mx-auto px-6 py-12">
+        {/* Hero & Audit Summary */}
+        <header className="mb-16">
+          <div className="bg-white border border-slate-100 p-8 md:p-12 rounded-[2rem] shadow-2xl shadow-slate-200/50 relative overflow-hidden">
              
-             <button 
-                onClick={handleGetAdvice}
-                disabled={isAiLoading || totals.savings === 0}
-                className="mt-8 bg-white text-black px-10 py-4 rounded-full font-bold hover:scale-105 transition-transform disabled:opacity-30 disabled:hover:scale-100 shadow-xl"
-             >
-               {isAiLoading ? "Consulting AI..." : "Get Strategic Summary"}
-             </button>
+             {/* Vibrant Background Accents */}
+             <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-violet-400/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+             <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+
+             <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+               <div>
+                 <p className="text-xs uppercase font-extrabold text-slate-400 mb-2 tracking-widest">Total Monthly Savings</p>
+                 <p className="text-6xl md:text-8xl font-black font-mono tracking-tighter leading-none text-transparent bg-clip-text bg-gradient-to-br from-emerald-500 to-green-400 drop-shadow-sm">
+                   ${totals.savings.toLocaleString()}
+                 </p>
+                 <div className="mt-6 flex items-center gap-3">
+                   <p className="text-sm font-semibold text-slate-600 bg-slate-100 inline-flex items-center px-4 py-2 rounded-lg border border-slate-200">
+                     Current Spend: <span className="font-mono font-bold text-slate-900 ml-2">${totals.current.toLocaleString()}</span>
+                   </p>
+                 </div>
+               </div>
+
+               <div className="flex md:justify-end">
+                 <button 
+                    onClick={handleGetAdvice}
+                    disabled={isAiLoading || totals.savings === 0}
+                    className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-violet-600 text-white px-10 py-5 rounded-2xl font-black text-lg tracking-wide hover:scale-[1.02] transition-transform disabled:opacity-40 disabled:hover:scale-100 shadow-xl shadow-blue-500/30 flex items-center justify-center gap-3"
+                 >
+                   {isAiLoading ? (
+                     <>
+                       <span className="animate-pulse flex space-x-1.5">
+                         <span className="w-2.5 h-2.5 bg-white rounded-full"></span>
+                         <span className="w-2.5 h-2.5 bg-white rounded-full animation-delay-200"></span>
+                         <span className="w-2.5 h-2.5 bg-white rounded-full animation-delay-400"></span>
+                       </span>
+                       Consulting AI
+                     </>
+                   ) : "Generate AI Strategy"}
+                 </button>
+               </div>
+             </div>
           </div>
           
           <AnimatePresence>
             {aiResponse && (
               <motion.div 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6 p-8 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-left"
+                initial={{ opacity: 0, height: 0, y: -10 }} 
+                animate={{ opacity: 1, height: "auto", y: 0 }}
+                className="mt-6 p-6 md:p-8 bg-blue-50 border border-blue-100 rounded-3xl text-left shadow-lg shadow-blue-100/50"
               >
-                <p className="text-blue-300 italic text-[15px] leading-relaxed font-medium">
-                  {aiResponse}
-                </p>
+                <div className="flex items-start gap-4">
+                  <div className="text-blue-600 mt-1 bg-blue-100 p-2 rounded-full">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                  </div>
+                  <p className="text-blue-900 text-[15px] md:text-[17px] leading-relaxed font-medium">
+                    {aiResponse}
+                  </p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Tools Grid */}
+        <div className="mb-8 flex items-center justify-between">
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">License Inventory</h2>
+          <div className="h-px bg-slate-200 flex-1 ml-6" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {TOOLS.map((t, i) => {
             const r = results[i];
             const plans = getPlansForTool(t.name);
             const isGemini = t.name === "Gemini";
+            const hasSavings = r.totalSavings > 0;
             
             return (
-              <div key={t.name} className="bg-[#0f172a]/80 p-8 rounded-[2rem] border border-slate-800 flex flex-col justify-between hover:border-slate-600 transition-colors shadow-lg">
+              <div key={t.name} className={`bg-white p-7 rounded-3xl border-2 flex flex-col justify-between transition-all duration-300 ${hasSavings ? 'border-blue-200 shadow-xl shadow-blue-900/5 hover:border-blue-400 hover:-translate-y-1' : 'border-slate-100 shadow-md'}`}>
+                
                 <div className="mb-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-2xl text-slate-100 tracking-tight">{t.name}</h3>
-                    <p className="font-mono text-slate-400 font-bold text-lg">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-bold text-xl text-slate-900 tracking-tight">{t.name}</h3>
+                    <p className="font-mono text-slate-500 font-bold bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
                       {isGemini ? "₹" : "$"}{r.currentSpend}
                     </p>
                   </div>
 
-                  {/* RESTORED WARNINGS & BREAKDOWNS */}
                   {r.warning && (
-                    <div className="mb-4 bg-red-900/30 text-red-400 border border-red-900/40 text-[11px] px-3 py-2 rounded-xl font-bold uppercase tracking-tight">
-                      ⚠️ {r.warning}
+                    <div className="mb-4 bg-orange-50 border border-orange-200 text-orange-700 text-[11px] px-3 py-2 rounded-lg uppercase font-bold tracking-wider inline-flex items-center gap-2 shadow-sm">
+                      <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                      {r.warning}
                     </div>
                   )}
 
                   <div className="space-y-4 mt-6">
-                    <div>
-                      <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2">Plan Tier</p>
+                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest px-2 mb-1">Plan Tier</p>
                       <select 
                         value={configs[i].plan}
                         onChange={(e) => update(i, { plan: e.target.value })}
-                        className="w-full bg-[#020617] text-sm text-slate-200 font-bold p-3 rounded-xl border border-slate-800 outline-none cursor-pointer"
+                        className="w-full bg-transparent text-sm text-slate-900 font-bold px-2 outline-none cursor-pointer appearance-none"
                       >
                         {plans.map(p => <option key={p} value={p}>{p}</option>)}
                       </select>
                     </div>
                     
-                    <div>
-                      <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2">Total Seats</p>
-                      <div className="flex items-center gap-4">
-                        <button onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} className="w-12 h-12 bg-[#020617] rounded-xl border border-slate-800 hover:bg-slate-800 transition-colors font-bold text-xl text-slate-400">-</button>
-                        <span className="flex-1 text-center font-black text-2xl font-mono text-white">{configs[i].seats}</span>
-                        <button onClick={() => update(i, { seats: configs[i].seats + 1 })} className="w-12 h-12 bg-[#020617] rounded-xl border border-slate-800 hover:bg-slate-800 transition-colors font-bold text-xl text-slate-400">+</button>
+                    <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest pl-2">Seats</p>
+                      <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
+                        <button onClick={() => update(i, { seats: Math.max(0, configs[i].seats - 1) })} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md font-bold transition-colors">−</button>
+                        <span className="w-10 text-center font-black font-mono text-slate-900 text-lg">{configs[i].seats}</span>
+                        <button onClick={() => update(i, { seats: configs[i].seats + 1 })} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md font-bold transition-colors">+</button>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {r.totalSavings > 0 && (
-                   <div className="mt-6 pt-6 border-t border-slate-800">
+                {hasSavings && (
+                   <div className="mt-6 pt-5 border-t border-slate-100">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-[11px] text-green-400 font-black uppercase tracking-widest">Savings Potential</span>
-                        <span className="text-green-400 font-mono font-bold text-lg">+{isGemini ? "₹" : "$"}{r.totalSavings}</span>
+                        <span className="text-[11px] text-emerald-600 font-extrabold uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-md">Optimized Savings</span>
+                        <span className="text-emerald-500 font-mono font-black text-lg">+{isGemini ? "₹" : "$"}{r.totalSavings}</span>
                       </div>
                       {r.breakdown?.map((b, idx) => (
-                        <p key={idx} className="text-[11px] text-slate-500 flex items-center gap-2">
-                          <span className="w-1 h-1 bg-slate-600 rounded-full" />
-                          {b.type === "ghost_seats" ? "Optimize seat allocation" : "Annual billing discount"}
+                        <p key={idx} className="text-[12px] text-slate-500 font-medium flex items-center gap-2 mt-1">
+                          <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                          {b.type === "ghost_seats" ? "Optimize unused seats" : "Apply annual discount"}
                         </p>
                       ))}
                    </div>
